@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.chat</groupId>
-    <artifactId>all-chat-on-this</artifactId>
+    <artifactId>acot-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>all-chat-on-this</name>
-    <description>all-chat-on-this</description>
+    <name>acot-backend</name>
+    <description>acot-backend</description>
     <url/>
     <licenses>
         <license/>
