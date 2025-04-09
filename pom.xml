@@ -68,6 +68,18 @@
             <version>3.5.11</version>
         </dependency>
 
+        <!-- VO 数据翻译 -->
+        <dependency>
+            <groupId>com.fhs-opensource</groupId>
+            <artifactId>easy-trans-spring-boot-starter</artifactId>
+            <version>3.0.6</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fhs-opensource</groupId>
+            <artifactId>easy-trans-mybatis-plus-extend</artifactId>
+            <version>3.0.6</version>
+        </dependency>
+
         <!-- Redis 相关 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -99,6 +111,12 @@
             <groupId>com.xkcoding.justauth</groupId>
             <artifactId>justauth-spring-boot-starter</artifactId>
             <version>1.4.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>cn.hutool</groupId>
+                    <artifactId>hutool-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Job 定时任务相关 -->
@@ -118,6 +136,25 @@
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>5.8.35</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dromara.hutool</groupId>
+            <artifactId>hutool-extra</artifactId>
+            <version>6.0.0-M19</version>
+        </dependency>
+
+        <!-- Java扩展相关 -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.4.0-jre</version>
+        </dependency>
+
+        <!-- 文档相关 -->
+        <dependency>
+            <groupId>com.github.xingfudeshi</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+            <version>4.6.0</version>
         </dependency>
     </dependencies>
 
