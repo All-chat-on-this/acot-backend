@@ -2,8 +2,8 @@ package com.chat.allchatonthis.mybatis.core.query;
 
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjectUtil;
-import com.chat.allchatonthis.common.util.collection.ArrayUtils;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+import com.chat.allchatonthis.common.util.collection.ArrayUtils;
 import com.github.yulichang.toolkit.MPJWrappers;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import org.springframework.util.StringUtils;
@@ -14,7 +14,9 @@ import java.util.function.Consumer;
 /**
  * 拓展 MyBatis Plus Join QueryWrapper 类，主要增加如下功能：
  * <p>
- * 1. 拼接条件的方法，增加 xxxIfPresent 方法，用于判断值不存在的时候，不要拼接到条件中。@param <T> 数据类型
+ * 1. 拼接条件的方法，增加 xxxIfPresent 方法，用于判断值不存在的时候，不要拼接到条件中。
+ *
+ * @param <T> 数据类型
  */
 public class MPJLambdaWrapperX<T> extends MPJLambdaWrapper<T> {
 

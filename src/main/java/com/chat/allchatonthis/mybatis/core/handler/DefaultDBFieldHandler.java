@@ -1,7 +1,6 @@
 package com.chat.allchatonthis.mybatis.core.handler;
 
 import com.chat.allchatonthis.mybatis.core.dataobject.BaseDO;
-import com.chat.allchatonthis.web.core.util.WebFrameworkUtils;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import org.apache.ibatis.reflection.MetaObject;
 
@@ -28,7 +27,7 @@ public class DefaultDBFieldHandler implements MetaObjectHandler {
                 baseDO.setUpdateTime(current);
             }
 
-            Long userId = WebFrameworkUtils.getLoginUserId();
+            Long userId = 1L;
             // 当前登录用户不为空，创建人为空，则当前登录用户为创建人
             if (Objects.nonNull(userId) && Objects.isNull(baseDO.getCreator())) {
                 baseDO.setCreator(userId.toString());
@@ -50,7 +49,7 @@ public class DefaultDBFieldHandler implements MetaObjectHandler {
 
         // 当前登录用户不为空，更新人为空，则当前登录用户为更新人
         Object modifier = getFieldValByName("updater", metaObject);
-        Long userId = WebFrameworkUtils.getLoginUserId();
+        Long userId = 1L;
         if (Objects.nonNull(userId) && Objects.isNull(modifier)) {
             setFieldValByName("updater", userId.toString(), metaObject);
         }
