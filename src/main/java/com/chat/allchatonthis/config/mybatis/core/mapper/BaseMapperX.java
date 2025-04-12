@@ -142,12 +142,6 @@ public interface BaseMapperX<T> extends MPJBaseMapper<T> {
      * @param entities 实体们
      */
     default Boolean insertBatch(Collection<T> entities) {
-        // 特殊：SQL Server 批量插入后，获取 id 会报错，因此通过循环处理
-        DbType dbType = JdbcUtils.getDbType();
-        if (JdbcUtils.isSQLServer(dbType)) {
-            entities.forEach(this::insert);
-            return CollUtil.isNotEmpty(entities);
-        }
         return Db.saveBatch(entities);
     }
 
@@ -158,12 +152,6 @@ public interface BaseMapperX<T> extends MPJBaseMapper<T> {
      * @param size     插入数量 Db.saveBatch 默认为 1000
      */
     default Boolean insertBatch(Collection<T> entities, int size) {
-        // 特殊：SQL Server 批量插入后，获取 id 会报错，因此通过循环处理
-        DbType dbType = JdbcUtils.getDbType();
-        if (JdbcUtils.isSQLServer(dbType)) {
-            entities.forEach(this::insert);
-            return CollUtil.isNotEmpty(entities);
-        }
         return Db.saveBatch(entities, size);
     }
 

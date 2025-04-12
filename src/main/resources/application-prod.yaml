@@ -24,6 +24,10 @@ spring:
       max-request-size: 32MB # 设置总上传的文件大小
   # 数据源配置项 - 环境特定
   datasource:
+    url: jdbc:mysql://117.72.111.131:3306/acot-prod?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+    username: root
+    password: mkyr15973
+    driver-class-name: com.mysql.cj.jdbc.Driver
     druid: # Druid 【监控】相关的全局配置
       web-stat-filter:
         enabled: true
@@ -42,19 +46,6 @@ spring:
         wall:
           config:
             multi-statement-allow: true
-    dynamic:
-      datasource:
-        master:
-          url: jdbc:mysql://117.72.111.131:3306/acot-prod?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true # MySQL Connector/J 8.X 连接的示例
-          username: root
-          password: mkyr15973
-          driver-class-name: com.mysql.cj.jdbc.Driver
-        slave: # 模拟从库，可根据自己需要修改
-          lazy: true # 开启懒加载，保证启动速度
-          url: jdbc:mysql://117.72.111.131:3306/acot-prod?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true # MySQL Connector/J 8.X 连接的示例
-          username: root
-          password: mkyr15973
-          driver-class-name: com.mysql.cj.jdbc.Driver
 
   # Redis 配置 - 环境特定
   data:
