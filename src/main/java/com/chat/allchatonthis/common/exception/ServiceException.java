@@ -1,58 +1,42 @@
 package com.chat.allchatonthis.common.exception;
 
-import com.chat.allchatonthis.common.exception.enums.ServiceErrorCodeRange;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 
 /**
- * 业务逻辑异常 Exception
+ * Service layer exception
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public final class ServiceException extends RuntimeException {
+public class ServiceException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
 
     /**
-     * 业务错误码
-     *
-     * @see ServiceErrorCodeRange
+     * Error code
      */
-    @Getter
     private Integer code;
+
     /**
-     * 错误提示
+     * Error message
      */
     private String message;
 
     /**
-     * 空构造方法，避免反序列化问题
+     * Error data
      */
-    public ServiceException() {
-    }
-
-    public ServiceException(ErrorCode errorCode) {
-        this.code = errorCode.getCode();
-        this.message = errorCode.getMsg();
-    }
+    private Object data;
 
     public ServiceException(Integer code, String message) {
+        super(message);
         this.code = code;
         this.message = message;
     }
 
-    public ServiceException setCode(Integer code) {
+    public ServiceException(Integer code, String message, Object data) {
+        super(message);
         this.code = code;
-        return this;
-    }
-
-    @Override
-    public String getMessage() {
-        return message;
-    }
-
-    public ServiceException setMessage(String message) {
         this.message = message;
-        return this;
+        this.data = data;
     }
-
 }
