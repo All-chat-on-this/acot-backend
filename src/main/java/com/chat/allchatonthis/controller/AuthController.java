@@ -14,7 +14,7 @@ import java.util.Map;
  * Controller for authentication and social login
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -24,7 +24,7 @@ public class AuthController {
     /**
      * Regular login with username and password
      */
-    @PostMapping("/auth/login")
+    @PostMapping("/login")
     public CommonResult<UserInfomationVO> login(@RequestParam String username, @RequestParam String password) {
         UserInfomationVO response = authService.login(username, password);
         return CommonResult.success(response);
@@ -33,7 +33,7 @@ public class AuthController {
     /**
      * Social login callback
      */
-    @GetMapping("/auth/social/callback")
+    @GetMapping("/social/callback")
     public CommonResult<UserInfomationVO> socialLogin(
             @RequestParam("type") Integer socialType,
             @RequestParam("user_type") Integer userType,
@@ -60,7 +60,7 @@ public class AuthController {
     /**
      * Bind social account to an existing user
      */
-    @PostMapping("/auth/social/bind")
+    @PostMapping("/social/bind")
     public CommonResult<Boolean> bindSocialUser(
             @RequestParam("userId") Long userId,
             @RequestParam("type") Integer socialType,
@@ -74,7 +74,7 @@ public class AuthController {
     /**
      * Validate token
      */
-    @GetMapping("/auth/validate")
+    @GetMapping("/validate")
     public CommonResult<Boolean> validateToken(@RequestParam("token") String token) {
         boolean valid = authService.validateToken(token);
         return CommonResult.success(valid);
@@ -83,7 +83,7 @@ public class AuthController {
     /**
      * Get user information by ID
      */
-    @GetMapping("/auth/user/{userId}")
+    @GetMapping("/user/{userId}")
     public CommonResult<UserInfomationVO> getUserInformation(@PathVariable("userId") Long userId) {
         UserInfomationVO userInfo = authService.getUserInformation(userId);
         return CommonResult.success(userInfo);
