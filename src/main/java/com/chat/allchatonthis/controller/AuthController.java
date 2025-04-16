@@ -31,6 +31,18 @@ public class AuthController {
     }
 
     /**
+     * Register a new user
+     */
+    @PostMapping("/register")
+    public CommonResult<UserInfomationVO> register(
+            @RequestParam String username, 
+            @RequestParam String password,
+            @RequestParam(required = false) String nickname) {
+        UserInfomationVO response = authService.register(username, password, nickname);
+        return CommonResult.success(response);
+    }
+
+    /**
      * Social login callback
      */
     @GetMapping("/social/callback")
@@ -87,5 +99,14 @@ public class AuthController {
     public CommonResult<UserInfomationVO> getUserInformation(@PathVariable("userId") Long userId) {
         UserInfomationVO userInfo = authService.getUserInformation(userId);
         return CommonResult.success(userInfo);
+    }
+
+    /**
+     * Logout the user
+     */
+    @PostMapping("/logout")
+    public CommonResult<Boolean> logout(@RequestParam("token") String token) {
+        boolean result = authService.logout(token);
+        return CommonResult.success(result);
     }
 }

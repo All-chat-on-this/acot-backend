@@ -19,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
@@ -75,6 +76,39 @@ public class AuthServiceImpl implements AuthService {
 
         // Return login response
         return createLoginResponse(userDetails, jwt, false);
+    }
+
+    @Override
+    @Transactional
+    public UserInfomationVO register(String username, String password, String nickname) {
+        // Check if username already exists
+        long count = userService.lambdaQuery().eq(UserDO::getUsername, username).count();
+        if (count > 0) {
+            throw new ServiceException(AUTH_USER_EXISTS.getCode(), "Username already exists");
+        }
+
+        // Create new user
+        UserDO user = new UserDO()
+                .setUsername(username)
+                .setPassword(passwordEncoder.encode(password))
+                .setLoginType(0); // 0 for regular account
+
+        // Set nickname if provided, otherwise use username
+        if (StringUtils.hasText(nickname)) {
+            user.setNickname(nickname);
+        } else {
+            user.setNickname(username);
+        }
+
+        // Save user
+        userService.save(user);
+
+        // Generate JWT token
+        String jwt = jwtUtils.generateToken(user.getUsername(), user.getId(), user.getLoginType());
+
+        // Convert to LoginUser and create response
+        LoginUser loginUser = convertToLoginUser(user);
+        return createLoginResponse(loginUser, jwt, true);
     }
 
     @Override
@@ -205,6 +239,31 @@ public class AuthServiceImpl implements AuthService {
                 .nickname(loginUser.getNickname())
                 .loginType(loginUser.getLoginType())
                 .build();
+    }
+
+    @Override
+    public boolean logout(String token) {
+        // Validate token
+        if (!validateToken(token)) {
+            // If token is already invalid, consider logout successful
+            return true;
+        }
+        
+        try {
+            // Get username from token
+            String username = jwtUtils.extractUsername(token);
+            
+            // Clear SecurityContext if this user is currently logged in
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getName().equals(username)) {
+                SecurityContextHolder.clearContext();
+            }
+            
+            return true;
+        } catch (Exception e) {
+            log.error("Error during logout: {}", e.getMessage(), e);
+            return false;
+        }
     }
 
     /**
