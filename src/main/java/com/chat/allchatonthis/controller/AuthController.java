@@ -1,7 +1,7 @@
 package com.chat.allchatonthis.controller;
 
 import com.chat.allchatonthis.common.pojo.CommonResult;
-import com.chat.allchatonthis.entity.vo.LoginResponseVO;
+import com.chat.allchatonthis.entity.vo.UserInfomationVO;
 import com.chat.allchatonthis.service.auth.AuthService;
 import com.chat.allchatonthis.service.social.SocialClientService;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-public class LoginController {
+public class AuthController {
 
     private final AuthService authService;
     private final SocialClientService socialClientService;
@@ -25,8 +25,8 @@ public class LoginController {
      * Regular login with username and password
      */
     @PostMapping("/auth/login")
-    public CommonResult<LoginResponseVO> login(@RequestParam String username, @RequestParam String password) {
-        LoginResponseVO response = authService.login(username, password);
+    public CommonResult<UserInfomationVO> login(@RequestParam String username, @RequestParam String password) {
+        UserInfomationVO response = authService.login(username, password);
         return CommonResult.success(response);
     }
 
@@ -34,12 +34,12 @@ public class LoginController {
      * Social login callback
      */
     @GetMapping("/auth/social/callback")
-    public CommonResult<LoginResponseVO> socialLogin(
+    public CommonResult<UserInfomationVO> socialLogin(
             @RequestParam("type") Integer socialType,
             @RequestParam("user_type") Integer userType,
             @RequestParam("code") String code,
             @RequestParam("state") String state) {
-        LoginResponseVO response = authService.socialLogin(socialType, userType, code, state);
+        UserInfomationVO response = authService.socialLogin(socialType, userType, code, state);
         return CommonResult.success(response);
     }
 
@@ -78,5 +78,14 @@ public class LoginController {
     public CommonResult<Boolean> validateToken(@RequestParam("token") String token) {
         boolean valid = authService.validateToken(token);
         return CommonResult.success(valid);
+    }
+
+    /**
+     * Get user information by ID
+     */
+    @GetMapping("/auth/user/{userId}")
+    public CommonResult<UserInfomationVO> getUserInformation(@PathVariable("userId") Long userId) {
+        UserInfomationVO userInfo = authService.getUserInformation(userId);
+        return CommonResult.success(userInfo);
     }
 }

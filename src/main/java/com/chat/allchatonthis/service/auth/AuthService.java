@@ -1,6 +1,6 @@
 package com.chat.allchatonthis.service.auth;
 
-import com.chat.allchatonthis.entity.vo.LoginResponseVO;
+import com.chat.allchatonthis.entity.vo.UserInfomationVO;
 
 /**
  * Authentication service interface
@@ -14,7 +14,7 @@ public interface AuthService {
      * @param password Password
      * @return Login response with JWT token
      */
-    LoginResponseVO login(String username, String password);
+    UserInfomationVO login(String username, String password);
 
     /**
      * Login with social media (OAuth2)
@@ -25,7 +25,7 @@ public interface AuthService {
      * @param state      State param from OAuth
      * @return Login response with JWT token
      */
-    LoginResponseVO socialLogin(Integer socialType, Integer userType, String code, String state);
+    UserInfomationVO socialLogin(Integer socialType, Integer userType, String code, String state);
 
     /**
      * Bind social account to an existing user
@@ -55,4 +55,12 @@ public interface AuthService {
      * @return true if update successful
      */
     boolean updateUserNickname(Long userId, String nickname);
+    
+    /**
+     * Get user information by user ID
+     *
+     * @param userId User ID
+     * @return User information
+     */
+    UserInfomationVO getUserInformation(Long userId);
 } 

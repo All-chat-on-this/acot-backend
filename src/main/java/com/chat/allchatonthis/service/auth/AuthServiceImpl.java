@@ -4,7 +4,7 @@ import com.chat.allchatonthis.common.exception.ServiceException;
 import com.chat.allchatonthis.common.util.token.JwtUtils;
 import com.chat.allchatonthis.config.security.model.LoginUser;
 import com.chat.allchatonthis.entity.dataobject.UserDO;
-import com.chat.allchatonthis.entity.vo.LoginResponseVO;
+import com.chat.allchatonthis.entity.vo.UserInfomationVO;
 import com.chat.allchatonthis.enums.SocialTypeEnum;
 import com.chat.allchatonthis.service.core.UserService;
 import com.chat.allchatonthis.service.social.SocialClientService;
@@ -63,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginResponseVO login(String username, String password) {
+    public UserInfomationVO login(String username, String password) {
         // Authenticate user through Spring Security
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username, password));
@@ -79,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public LoginResponseVO socialLogin(Integer socialType, Integer userType, String code, String state) {
+    public UserInfomationVO socialLogin(Integer socialType, Integer userType, String code, String state) {
         // Validate social type
         SocialTypeEnum socialTypeEnum = SocialTypeEnum.valueOfType(socialType);
         if (socialTypeEnum == null) {
@@ -187,6 +187,26 @@ public class AuthServiceImpl implements AuthService {
         return updated;
     }
 
+    @Override
+    public UserInfomationVO getUserInformation(Long userId) {
+        // Get user from database
+        UserDO user = userService.getById(userId);
+        if (user == null) {
+            throw new ServiceException(AUTH_USER_NOT_FOUND.getCode(), "User not found with ID: " + userId);
+        }
+
+        // Convert to LoginUser
+        LoginUser loginUser = convertToLoginUser(user);
+
+        // Build UserInfomationVO without token information
+        return UserInfomationVO.builder()
+                .userId(loginUser.getUserId())
+                .username(loginUser.getUsername())
+                .nickname(loginUser.getNickname())
+                .loginType(loginUser.getLoginType())
+                .build();
+    }
+
     /**
      * Create a new user from social login
      */
@@ -227,8 +247,8 @@ public class AuthServiceImpl implements AuthService {
     /**
      * Create login response from user details
      */
-    private LoginResponseVO createLoginResponse(LoginUser userDetails, String jwt, boolean isNewUser) {
-        return LoginResponseVO.builder()
+    private UserInfomationVO createLoginResponse(LoginUser userDetails, String jwt, boolean isNewUser) {
+        return UserInfomationVO.builder()
                 .userId(userDetails.getUserId())
                 .username(userDetails.getUsername())
                 .nickname(userDetails.getNickname())
