@@ -1,4 +1,4 @@
-package com.chat.allchatonthis.entity.vo;
+package com.chat.allchatonthis.entity.vo.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,6 +1,6 @@
 package com.chat.allchatonthis.service.auth;
 
-import com.chat.allchatonthis.entity.vo.UserInfomationVO;
+import com.chat.allchatonthis.entity.vo.user.UserInfomationVO;
 
 /**
  * Authentication service interface

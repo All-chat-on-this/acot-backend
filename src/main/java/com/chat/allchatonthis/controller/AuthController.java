@@ -1,7 +1,8 @@
 package com.chat.allchatonthis.controller;
 
 import com.chat.allchatonthis.common.pojo.CommonResult;
-import com.chat.allchatonthis.entity.vo.UserInfomationVO;
+import com.chat.allchatonthis.common.util.security.LoginUser;
+import com.chat.allchatonthis.entity.vo.user.UserInfomationVO;
 import com.chat.allchatonthis.service.auth.AuthService;
 import com.chat.allchatonthis.service.social.SocialClientService;
 import lombok.RequiredArgsConstructor;
@@ -95,8 +96,8 @@ public class AuthController {
     /**
      * Get user information by ID
      */
-    @GetMapping("/user/{userId}")
-    public CommonResult<UserInfomationVO> getUserInformation(@PathVariable("userId") Long userId) {
+    @GetMapping("/user-information")
+    public CommonResult<UserInfomationVO> getUserInformation(@LoginUser Long userId) {
         UserInfomationVO userInfo = authService.getUserInformation(userId);
         return CommonResult.success(userInfo);
     }

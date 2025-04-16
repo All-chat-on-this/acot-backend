@@ -4,7 +4,7 @@ import com.chat.allchatonthis.common.exception.ServiceException;
 import com.chat.allchatonthis.common.util.token.JwtUtils;
 import com.chat.allchatonthis.config.security.model.LoginUser;
 import com.chat.allchatonthis.entity.dataobject.UserDO;
-import com.chat.allchatonthis.entity.vo.UserInfomationVO;
+import com.chat.allchatonthis.entity.vo.user.UserInfomationVO;
 import com.chat.allchatonthis.enums.SocialTypeEnum;
 import com.chat.allchatonthis.service.core.UserService;
 import com.chat.allchatonthis.service.social.SocialClientService;
@@ -84,7 +84,7 @@ public class AuthServiceImpl implements AuthService {
         // Check if username already exists
         long count = userService.lambdaQuery().eq(UserDO::getUsername, username).count();
         if (count > 0) {
-            throw new ServiceException(AUTH_USER_EXISTS.getCode(), "Username already exists");
+            throw new ServiceException(AUTH_USER_EXISTS, "Username already exists");
         }
 
         // Create new user
