@@ -6,7 +6,6 @@ import com.chat.allchatonthis.common.exception.ServiceException;
 import com.chat.allchatonthis.common.util.json.JsonUtils;
 import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
 import com.chat.allchatonthis.entity.vo.config.ConfigTestVO;
-import com.chat.allchatonthis.entity.vo.config.ModelStatusVO;
 import com.chat.allchatonthis.mapper.UserConfigMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +46,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
     @Override
     public UserConfigDO createConfig(UserConfigDO config, Long userId) {
         config.setUserId(userId);
+        config.setIsAvailable(false); // Set default value as false until tested
 
         // Ensure headers exists
         if (config.getHeaders() == null) {
@@ -74,6 +73,11 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         // Update fields
         config.setId(id);
         config.setUserId(userId);
+
+        // Maintain current isAvailable status unless it has been explicitly set
+        if (config.getIsAvailable() == null) {
+            config.setIsAvailable(existingConfig.getIsAvailable());
+        }
 
         // Ensure "Content-Type: application/json" is present in headers
         if (config.getHeaders() == null) {
@@ -145,6 +149,18 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                 String thinking = thinkingTextField != null ?
                         extractValueFromPath(responseMap, thinkingTextField.toString()) : null;
 
+                // Set isAvailable to true if the configuration has an ID (already saved)
+                if (config.getId() != null) {
+                    // Update the config in database to reflect it's available
+                    UserConfigDO updateConfig = new UserConfigDO();
+                    updateConfig.setId(config.getId());
+                    updateConfig.setIsAvailable(true);
+                    updateById(updateConfig);
+
+                    // Also update the current object
+                    config.setIsAvailable(true);
+                }
+
                 // Create success response
                 return ConfigTestVO.builder()
                         .success(true)
@@ -156,6 +172,17 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                                 .build())
                         .build();
             } else {
+                // If test fails, set isAvailable to false if the configuration has an ID
+                if (config.getId() != null) {
+                    UserConfigDO updateConfig = new UserConfigDO();
+                    updateConfig.setId(config.getId());
+                    updateConfig.setIsAvailable(false);
+                    updateById(updateConfig);
+
+                    // Also update the current object
+                    config.setIsAvailable(false);
+                }
+
                 return ConfigTestVO.builder()
                         .success(false)
                         .message("API returned error status: " + response.getStatusCode())
@@ -164,53 +191,21 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
             }
         } catch (Exception e) {
             log.error("Error testing configuration", e);
+
+            // If test fails due to exception, set isAvailable to false if the configuration has an ID
+            if (config.getId() != null) {
+                UserConfigDO updateConfig = new UserConfigDO();
+                updateConfig.setId(config.getId());
+                updateConfig.setIsAvailable(false);
+                updateById(updateConfig);
+
+                // Also update the current object
+                config.setIsAvailable(false);
+            }
+
             return ConfigTestVO.builder()
                     .success(false)
                     .message("Error connecting to API")
-                    .error(e.getMessage())
-                    .build();
-        }
-    }
-
-    @Override
-    public ModelStatusVO getModelStatus(Long configId, Long userId) {
-        // Check if config exists and belongs to user
-        UserConfigDO config = getConfig(configId, userId);
-        if (config == null) {
-            return ModelStatusVO.builder()
-                    .available(false)
-                    .error("Configuration not found or access denied")
-                    .build();
-        }
-
-        try {
-            // Look for model information in the request template
-            String modelId = null;
-            if (config.getRequestTemplate().containsKey("model")) {
-                modelId = config.getRequestTemplate().get("model").toString();
-            }
-
-            List<ModelStatusVO.ModelInfo> models = new ArrayList<>();
-
-            // If we found a model, add it to the list
-            if (modelId != null) {
-                models.add(ModelStatusVO.ModelInfo.builder()
-                        .id(modelId)
-                        .name(modelId)
-                        .description("Found in configuration")
-                        .maxTokens(4096) // Default value
-                        .available(true)
-                        .build());
-            }
-
-            return ModelStatusVO.builder()
-                    .available(true)
-                    .models(models)
-                    .build();
-        } catch (Exception e) {
-            log.error("Error getting model status", e);
-            return ModelStatusVO.builder()
-                    .available(false)
                     .error(e.getMessage())
                     .build();
         }

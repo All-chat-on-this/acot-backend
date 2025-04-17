@@ -4,7 +4,6 @@ import com.chat.allchatonthis.common.pojo.CommonResult;
 import com.chat.allchatonthis.common.util.object.BeanUtils;
 import com.chat.allchatonthis.common.util.security.LoginUser;
 import com.chat.allchatonthis.entity.vo.config.ConfigTestVO;
-import com.chat.allchatonthis.entity.vo.config.ModelStatusVO;
 import com.chat.allchatonthis.entity.vo.config.ConfigCreateOrUpdateReqVO;
 import com.chat.allchatonthis.entity.vo.config.ConfigRespVO;
 import com.chat.allchatonthis.entity.vo.config.ConfigTestReqVO;
@@ -87,16 +86,6 @@ public class ConfigController {
     public CommonResult<ConfigTestVO> testConfig(@RequestBody ConfigTestReqVO reqVO, @LoginUser Long userId) {
         UserConfigDO config = BeanUtils.toBean(reqVO, UserConfigDO.class);
         ConfigTestVO result = userConfigService.testConfig(config, userId);
-        return CommonResult.success(result);
-    }
-
-    /**
-     * Get model status for a configuration
-     */
-    @GetMapping("/{id}/models")
-    @PreAuthorize("isAuthenticated()")
-    public CommonResult<ModelStatusVO> getModelStatus(@PathVariable Long id, @LoginUser Long userId) {
-        ModelStatusVO result = userConfigService.getModelStatus(id, userId);
         return CommonResult.success(result);
     }
 }

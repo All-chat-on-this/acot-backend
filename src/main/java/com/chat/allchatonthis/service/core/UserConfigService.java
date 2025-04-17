@@ -3,7 +3,6 @@ package com.chat.allchatonthis.service.core;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
 import com.chat.allchatonthis.entity.vo.config.ConfigTestVO;
-import com.chat.allchatonthis.entity.vo.config.ModelStatusVO;
 
 import java.util.List;
 
@@ -56,19 +55,11 @@ public interface UserConfigService extends IService<UserConfigDO> {
     
     /**
      * Test a configuration by making a sample request to the API
+     * Sets isAvailable to true if test is successful
      * 
      * @param config Configuration to test (doesn't need to be saved)
      * @param userId User ID making the request
      * @return Test response with success/failure and any results
      */
     ConfigTestVO testConfig(UserConfigDO config, Long userId);
-    
-    /**
-     * Get status of models for a specific configuration
-     * 
-     * @param configId Configuration ID
-     * @param userId User ID for security check
-     * @return Model status information
-     */
-    ModelStatusVO getModelStatus(Long configId, Long userId);
 } 

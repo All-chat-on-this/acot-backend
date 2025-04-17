@@ -17,6 +17,7 @@ import java.util.Map;
 public class ConfigRespVO {
     
     private Long id;
+    private Boolean isAvailable;
     private Long userId;
     private String name;
     private String apiUrl;

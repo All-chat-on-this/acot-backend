@@ -18,6 +18,7 @@ import java.util.Map;
 @Accessors(chain = true)
 public class UserConfigDO extends BaseDO {
     private Long id;
+    private Boolean isAvailable; // Whether the configuration is available for use
     private Long userId; // Foreign key to UserDO
     private String name; // Configuration name
     private String apiUrl; // API URL for requests
