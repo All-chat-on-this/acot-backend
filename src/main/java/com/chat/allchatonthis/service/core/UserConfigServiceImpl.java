@@ -4,9 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.chat.allchatonthis.common.exception.ServiceException;
 import com.chat.allchatonthis.common.util.json.JsonUtils;
+import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
 import com.chat.allchatonthis.entity.vo.config.ConfigTestVO;
 import com.chat.allchatonthis.entity.vo.config.ModelStatusVO;
-import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
 import com.chat.allchatonthis.mapper.UserConfigMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.chat.allchatonthis.common.enums.ErrorCodeConstants.CONFIG_NOT_EXISTS;
 
 @Service
 @AllArgsConstructor
@@ -46,17 +48,17 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
     @Override
     public UserConfigDO createConfig(UserConfigDO config, Long userId) {
         config.setUserId(userId);
-        
+
         // Ensure headers exists
         if (config.getHeaders() == null) {
             config.setHeaders(new HashMap<>());
         }
-        
+
         // Ensure "Content-Type: application/json" is present in headers
         if (!config.getHeaders().containsKey("Content-Type")) {
             config.getHeaders().put("Content-Type", "application/json");
         }
-        
+
         save(config);
         return config;
     }
@@ -66,13 +68,13 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         // Check if config exists and belongs to user
         UserConfigDO existingConfig = getConfig(id, userId);
         if (existingConfig == null) {
-            throw new ServiceException("Configuration not found or access denied");
+            throw new ServiceException(CONFIG_NOT_EXISTS, "Configuration not found or access denied");
         }
-        
+
         // Update fields
         config.setId(id);
         config.setUserId(userId);
-        
+
         // Ensure "Content-Type: application/json" is present in headers
         if (config.getHeaders() == null) {
             config.setHeaders(new HashMap<>());
@@ -80,7 +82,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         if (!config.getHeaders().containsKey("Content-Type")) {
             config.getHeaders().put("Content-Type", "application/json");
         }
-        
+
         updateById(config);
         return config;
     }
@@ -97,7 +99,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         try {
             // Prepare headers
             HttpHeaders headers = new HttpHeaders();
-            
+
             // Add API key to appropriate location
             if ("header".equals(config.getApiKeyPlacement()) || config.getApiKeyPlacement() == null) {
                 // Default Authorization header
@@ -106,20 +108,20 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                 // Custom header
                 headers.set(config.getApiKeyHeader(), config.getApiKey());
             }
-            
+
             // Add custom headers
             if (config.getHeaders() != null) {
                 config.getHeaders().forEach(headers::set);
             }
-            
+
             // Prepare request body
             Map<String, Object> requestBody = new HashMap<>(config.getRequestTemplate());
-            
+
             // Add API key to request body if needed
             if ("body".equals(config.getApiKeyPlacement()) && config.getApiKeyBodyPath() != null) {
                 requestBody.put(config.getApiKeyBodyPath(), config.getApiKey());
             }
-            
+
             // Make request
             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
             ResponseEntity<String> response = restTemplate.exchange(
@@ -128,21 +130,21 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                     requestEntity,
                     String.class
             );
-            
+
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 // Parse response
                 Map<String, Object> responseMap = JsonUtils.parseObject(response.getBody(), Map.class);
-                
+
                 // Extract data using the response template paths
                 String roleField = config.getResponseTemplate().get("roleField").toString();
                 String contentField = config.getResponseTemplate().get("contentField").toString();
                 Object thinkingTextField = config.getResponseTemplate().get("thinkingTextField");
-                
+
                 String role = extractValueFromPath(responseMap, roleField);
                 String content = extractValueFromPath(responseMap, contentField);
-                String thinking = thinkingTextField != null ? 
+                String thinking = thinkingTextField != null ?
                         extractValueFromPath(responseMap, thinkingTextField.toString()) : null;
-                
+
                 // Create success response
                 return ConfigTestVO.builder()
                         .success(true)
@@ -180,16 +182,16 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                     .error("Configuration not found or access denied")
                     .build();
         }
-        
+
         try {
             // Look for model information in the request template
             String modelId = null;
             if (config.getRequestTemplate().containsKey("model")) {
                 modelId = config.getRequestTemplate().get("model").toString();
             }
-            
+
             List<ModelStatusVO.ModelInfo> models = new ArrayList<>();
-            
+
             // If we found a model, add it to the list
             if (modelId != null) {
                 models.add(ModelStatusVO.ModelInfo.builder()
@@ -200,7 +202,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                         .available(true)
                         .build());
             }
-            
+
             return ModelStatusVO.builder()
                     .available(true)
                     .models(models)
@@ -213,10 +215,10 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                     .build();
         }
     }
-    
+
     /**
      * Extract a value from a nested JSON structure using dot notation path
-     * 
+     *
      * @param data The data structure to extract from
      * @param path Path in dot notation (e.g., "choices[0].message.content")
      * @return The extracted value as a string or null if not found
@@ -225,17 +227,17 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
     private String extractValueFromPath(Map<String, Object> data, String path) {
         String[] parts = path.split("\\.");
         Object current = data;
-        
+
         for (String part : parts) {
             if (current == null) {
                 return null;
             }
-            
+
             // Handle array notation like choices[0]
             if (part.contains("[") && part.contains("]")) {
                 String arrayName = part.substring(0, part.indexOf('['));
                 int index = Integer.parseInt(part.substring(part.indexOf('[') + 1, part.indexOf(']')));
-                
+
                 if (current instanceof Map) {
                     Map<String, Object> map = (Map<String, Object>) current;
                     if (map.containsKey(arrayName) && map.get(arrayName) instanceof List) {
@@ -260,7 +262,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                 }
             }
         }
-        
+
         return current != null ? current.toString() : null;
     }
 } 

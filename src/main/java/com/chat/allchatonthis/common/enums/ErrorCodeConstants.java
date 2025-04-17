@@ -73,4 +73,7 @@ public interface ErrorCodeConstants {
     Integer SOCIAL_USER_BIND_FAILED = 2002; // Social user binding failed
     Integer SOCIAL_TYPE_NOT_SUPPORTED = 2003; // Social type not supported
 
+    // ========== CONFIG ERRORS ==========
+    Integer CONFIG_NOT_EXISTS = 3001; // Config not exists
+
 }
