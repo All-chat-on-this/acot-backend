@@ -3,6 +3,7 @@ package com.chat.allchatonthis.service.core;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.chat.allchatonthis.common.exception.ServiceException;
+import com.chat.allchatonthis.common.util.http.HttpUtils;
 import com.chat.allchatonthis.common.util.json.JsonUtils;
 import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
 import com.chat.allchatonthis.entity.vo.config.ConfigTestVO;
@@ -15,7 +16,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,33 +104,17 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
     @Override
     public ConfigTestVO testConfig(UserConfigDO config, Long userId) {
         try {
-            // Prepare headers
-            HttpHeaders headers = new HttpHeaders();
-
-            // Add API key to appropriate location
-            if ("header".equals(config.getApiKeyPlacement()) || config.getApiKeyPlacement() == null) {
-                // Default Authorization header
-                headers.set("Authorization", "Bearer " + config.getApiKey());
-            } else if ("custom_header".equals(config.getApiKeyPlacement()) && config.getApiKeyHeader() != null) {
-                // Custom header
-                headers.set(config.getApiKeyHeader(), config.getApiKey());
-            }
-
-            // Add custom headers
-            if (config.getHeaders() != null) {
-                config.getHeaders().forEach(headers::set);
-            }
-
-            // Prepare request body
-            Map<String, Object> requestBody = new HashMap<>(config.getRequestTemplate());
-
-            // Add API key to request body if needed
-            if ("body".equals(config.getApiKeyPlacement()) && config.getApiKeyBodyPath() != null) {
-                requestBody.put(config.getApiKeyBodyPath(), config.getApiKey());
-            }
+            // Use the common method to prepare request data
+            Map<String, Object> requestData = HttpUtils.prepareRequestData(config, "Hello, this is a test message.");
+            Map<String, String> headers = (Map<String, String>) requestData.get("headers");
+            Map<String, Object> requestBody = (Map<String, Object>) requestData.get("requestBody");
+            
+            // Convert to HttpHeaders
+            HttpHeaders httpHeaders = new HttpHeaders();
+            headers.forEach(httpHeaders::set);
 
             // Make request
-            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, httpHeaders);
             ResponseEntity<String> response = restTemplate.exchange(
                     config.getApiUrl(),
                     HttpMethod.POST,
@@ -139,15 +126,27 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                 // Parse response
                 Map<String, Object> responseMap = JsonUtils.parseObject(response.getBody(), Map.class);
 
-                // Extract data using the response template paths
-                String roleField = config.getResponseTemplate().get("roleField").toString();
-                String contentField = config.getResponseTemplate().get("contentField").toString();
-                Object thinkingTextField = config.getResponseTemplate().get("thinkingTextField");
+                // Try using new paths first if they exist
+                String content = null;
+                String thinking = null;
+                String role = "assistant"; // Default role
 
-                String role = extractValueFromPath(responseMap, roleField);
-                String content = extractValueFromPath(responseMap, contentField);
-                String thinking = thinkingTextField != null ?
-                        extractValueFromPath(responseMap, thinkingTextField.toString()) : null;
+                if (StringUtils.hasText(config.getResponseTextPath())) {
+                    content = JsonUtils.extractValueFromPath(responseMap, config.getResponseTextPath());
+                }
+
+                if (StringUtils.hasText(config.getResponseThinkingTextPath())) {
+                    thinking = JsonUtils.extractValueFromPath(responseMap, config.getResponseThinkingTextPath());
+                }
+
+                // Check if we found any content
+                if (content == null) {
+                    return ConfigTestVO.builder()
+                            .success(false)
+                            .message("Could not extract response content from API response")
+                            .error("Response paths not configured correctly or API returned unexpected format")
+                            .build();
+                }
 
                 // Set isAvailable to true if the configuration has an ID (already saved)
                 if (config.getId() != null) {
@@ -211,55 +210,5 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         updateConfig.setId(configId);
         updateConfig.setIsAvailable(available);
         updateById(updateConfig);
-    }
-
-    /**
-     * Extract a value from a nested JSON structure using dot notation path
-     *
-     * @param data The data structure to extract from
-     * @param path Path in dot notation (e.g., "choices[0].message.content")
-     * @return The extracted value as a string or null if not found
-     */
-    @SuppressWarnings("unchecked")
-    private String extractValueFromPath(Map<String, Object> data, String path) {
-        String[] parts = path.split("\\.");
-        Object current = data;
-
-        for (String part : parts) {
-            if (current == null) {
-                return null;
-            }
-
-            // Handle array notation like choices[0]
-            if (part.contains("[") && part.contains("]")) {
-                String arrayName = part.substring(0, part.indexOf('['));
-                int index = Integer.parseInt(part.substring(part.indexOf('[') + 1, part.indexOf(']')));
-
-                if (current instanceof Map) {
-                    Map<String, Object> map = (Map<String, Object>) current;
-                    if (map.containsKey(arrayName) && map.get(arrayName) instanceof List) {
-                        List<Object> array = (List<Object>) map.get(arrayName);
-                        if (index < array.size()) {
-                            current = array.get(index);
-                        } else {
-                            return null;
-                        }
-                    } else {
-                        return null;
-                    }
-                } else {
-                    return null;
-                }
-            } else {
-                // Regular property access
-                if (current instanceof Map) {
-                    current = ((Map<String, Object>) current).get(part);
-                } else {
-                    return null;
-                }
-            }
-        }
-
-        return current != null ? current.toString() : null;
     }
 } 

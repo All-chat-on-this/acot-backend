@@ -3,6 +3,8 @@ package com.chat.allchatonthis.service.core;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.chat.allchatonthis.common.exception.ServiceException;
+import com.chat.allchatonthis.common.util.http.HttpUtils;
+import com.chat.allchatonthis.common.util.json.JsonUtils;
 import com.chat.allchatonthis.entity.dataobject.ConversationDO;
 import com.chat.allchatonthis.entity.dataobject.ConversationMessageDO;
 import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
@@ -12,7 +14,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,38 +101,51 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
         save(userMessageDO);
 
         try {
-            // Prepare a copy of the config for testing
-            UserConfigDO requestConfig = new UserConfigDO();
-            requestConfig.setId(config.getId());
-            requestConfig.setApiUrl(config.getApiUrl());
-            requestConfig.setApiKey(config.getApiKey());
-            requestConfig.setApiKeyPlacement(config.getApiKeyPlacement());
-            requestConfig.setApiKeyHeader(config.getApiKeyHeader());
-            requestConfig.setApiKeyBodyPath(config.getApiKeyBodyPath());
-            requestConfig.setHeaders(config.getHeaders());
-
-            // Modify request template with the conversation context
-            Map<String, Object> requestTemplate = new HashMap<>(config.getRequestTemplate());
-
-            // Here we would typically add the message history and current message to the request
-            // This is a simplified implementation - in a real app, you'd handle context window management
-
-            requestConfig.setRequestTemplate(requestTemplate);
-            requestConfig.setResponseTemplate(config.getResponseTemplate());
-
-            // Make the API call
-            ConfigTestVO response = userConfigService.testConfig(requestConfig, userId);
-
-            if (!response.isSuccess()) {
-                throw new ServiceException(API_CALL_FAILED.getCode(), response.getMessage());
+            // Use the common method to prepare request data
+            Map<String, Object> requestData = HttpUtils.prepareRequestData(config, userMessage);
+            Map<String, String> headers = (Map<String, String>) requestData.get("headers");
+            Map<String, Object> requestBody = (Map<String, Object>) requestData.get("requestBody");
+            
+            // Make the actual HTTP request
+            String requestBodyStr = JsonUtils.toJsonString(requestBody);
+            String responseStr = HttpUtils.post(config.getApiUrl(), headers, requestBodyStr);
+            
+            if (responseStr == null) {
+                throw new ServiceException(API_CALL_FAILED.getCode(), "API returned null response");
             }
+            
+            // Parse the response
+            Map<String, Object> responseMap = JsonUtils.parseObject(responseStr, Map.class);
+            
+            // Extract content and thinking text from the response using the specified paths
+            String content = null;
+            String thinking = null;
+            
+            if (StringUtils.hasText(config.getResponseTextPath())) {
+                content = JsonUtils.extractValueFromPath(responseMap, config.getResponseTextPath());
+            }
+            
+            if (StringUtils.hasText(config.getResponseThinkingTextPath())) {
+                thinking = JsonUtils.extractValueFromPath(responseMap, config.getResponseThinkingTextPath());
+            }
+            
+            if (content == null) {
+                throw new ServiceException(API_CALL_FAILED.getCode(), "Could not extract response content");
+            }
+
+            // Create user message with the request
+            ConversationMessageDO requestMessageDO = new ConversationMessageDO()
+                    .setConversationId(conversationId)
+                    .setRole("user")
+                    .setContent(userMessage);
+            save(requestMessageDO);
 
             // Create assistant message with the response
             ConversationMessageDO assistantMessageDO = new ConversationMessageDO()
                     .setConversationId(conversationId)
-                    .setRole(response.getResponse().getRole() != null ? response.getResponse().getRole() : "assistant")
-                    .setContent(response.getResponse().getContent())
-                    .setThinkingText(response.getResponse().getThinking());
+                    .setRole("assistant")
+                    .setContent(content)
+                    .setThinkingText(thinking);
             save(assistantMessageDO);
 
             // Update the conversation's update time

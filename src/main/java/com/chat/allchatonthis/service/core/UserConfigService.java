@@ -5,6 +5,7 @@ import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
 import com.chat.allchatonthis.entity.vo.config.ConfigTestVO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface UserConfigService extends IService<UserConfigDO> {
     

@@ -16,7 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * JSON 工具类
@@ -205,4 +207,127 @@ public class JsonUtils {
         return JSONUtil.isTypeJSONObject(str);
     }
 
+    /**
+     * Extract a value from a nested JSON structure using dot notation path
+     *
+     * @param data The data structure to extract from
+     * @param path Path in dot notation (e.g., "choices[0].message.content")
+     * @return The extracted value as a string or null if not found
+     */
+    @SuppressWarnings("unchecked")
+    public static String extractValueFromPath(Map<String, Object> data, String path) {
+        String[] parts = path.split("\\.");
+        Object current = data;
+
+        for (String part : parts) {
+            if (current == null) {
+                return null;
+            }
+
+            // Handle array notation like choices[0]
+            if (part.contains("[") && part.contains("]")) {
+                String arrayName = part.substring(0, part.indexOf('['));
+                int index = Integer.parseInt(part.substring(part.indexOf('[') + 1, part.indexOf(']')));
+
+                if (current instanceof Map) {
+                    Map<String, Object> map = (Map<String, Object>) current;
+                    if (map.containsKey(arrayName) && map.get(arrayName) instanceof List) {
+                        List<Object> array = (List<Object>) map.get(arrayName);
+                        if (index < array.size()) {
+                            current = array.get(index);
+                        } else {
+                            return null;
+                        }
+                    } else {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+            } else {
+                // Regular property access
+                if (current instanceof Map) {
+                    current = ((Map<String, Object>) current).get(part);
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        return current != null ? current.toString() : null;
+    }
+
+    /**
+     * Set a value in a nested JSON structure using dot notation path
+     *
+     * @param data The data structure to modify
+     * @param path Path in dot notation (e.g., "messages[0].content")
+     * @param value The value to set
+     */
+    @SuppressWarnings("unchecked")
+    public static void setValueByPath(Map<String, Object> data, String path, Object value) {
+        String[] parts = path.split("\\.");
+        Map<String, Object> current = data;
+
+        for (int i = 0; i < parts.length - 1; i++) {
+            String part = parts[i];
+
+            // Handle array notation
+            if (part.contains("[") && part.contains("]")) {
+                String arrayName = part.substring(0, part.indexOf('['));
+                int index = Integer.parseInt(part.substring(part.indexOf('[') + 1, part.indexOf(']')));
+
+                // Create array if it doesn't exist
+                if (!current.containsKey(arrayName) || !(current.get(arrayName) instanceof List)) {
+                    current.put(arrayName, new ArrayList<>());
+                }
+
+                List<Object> array = (List<Object>) current.get(arrayName);
+
+                // Ensure array is large enough
+                while (array.size() <= index) {
+                    array.add(new HashMap<String, Object>());
+                }
+
+                // Move to the next level
+                if (!(array.get(index) instanceof Map)) {
+                    array.set(index, new HashMap<String, Object>());
+                }
+
+                current = (Map<String, Object>) array.get(index);
+            } else {
+                // Regular property access
+                if (!current.containsKey(part) || !(current.get(part) instanceof Map)) {
+                    current.put(part, new HashMap<String, Object>());
+                }
+                current = (Map<String, Object>) current.get(part);
+            }
+        }
+
+        // Set the final value
+        String lastPart = parts[parts.length - 1];
+
+        // Handle array notation for the last part
+        if (lastPart.contains("[") && lastPart.contains("]")) {
+            String arrayName = lastPart.substring(0, lastPart.indexOf('['));
+            int index = Integer.parseInt(lastPart.substring(lastPart.indexOf('[') + 1, lastPart.indexOf(']')));
+
+            // Create array if it doesn't exist
+            if (!current.containsKey(arrayName) || !(current.get(arrayName) instanceof List)) {
+                current.put(arrayName, new ArrayList<>());
+            }
+
+            List<Object> array = (List<Object>) current.get(arrayName);
+
+            // Ensure array is large enough
+            while (array.size() <= index) {
+                array.add(null);
+            }
+
+            array.set(index, value);
+        } else {
+            // Regular property set
+            current.put(lastPart, value);
+        }
+    }
 }

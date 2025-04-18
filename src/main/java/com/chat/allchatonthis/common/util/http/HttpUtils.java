@@ -7,6 +7,8 @@ import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
+import com.chat.allchatonthis.common.util.json.JsonUtils;
+import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponents;
@@ -14,6 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -33,18 +36,14 @@ public class HttpUtils {
         return builder.build();
     }
 
-    private String append(String base, Map<String, ?> query, boolean fragment) {
-        return append(base, query, null, fragment);
-    }
-
     /**
      * 拼接 URL
-     *
+     * <p>
      * copy from Spring Security OAuth2 的 AuthorizationEndpoint 类的 append 方法
      *
-     * @param base 基础 URL
-     * @param query 查询参数
-     * @param keys query 的 key，对应的原本的 key 的映射。例如说 query 里有个 key 是 xx，实际它的 key 是 extra_xx，则通过 keys 里添加这个映射
+     * @param base     基础 URL
+     * @param query    查询参数
+     * @param keys     query 的 key，对应的原本的 key 的映射。例如说 query 里有个 key 是 xx，实际它的 key 是 extra_xx，则通过 keys 里添加这个映射
      * @param fragment URL 的 fragment，即拼接到 # 中
      * @return 拼接后的 URL
      */
@@ -124,11 +123,11 @@ public class HttpUtils {
 
     /**
      * HTTP post 请求，基于 {@link cn.hutool.http.HttpUtil} 实现
-     *
+     * <p>
      * 为什么要封装该方法，因为 HttpUtil 默认封装的方法，没有允许传递 headers 参数
      *
-     * @param url URL
-     * @param headers 请求头
+     * @param url         URL
+     * @param headers     请求头
      * @param requestBody 请求体
      * @return 请求结果
      */
@@ -143,10 +142,10 @@ public class HttpUtils {
 
     /**
      * HTTP get 请求，基于 {@link cn.hutool.http.HttpUtil} 实现
-     *
+     * <p>
      * 为什么要封装该方法，因为 HttpUtil 默认封装的方法，没有允许传递 headers 参数
      *
-     * @param url URL
+     * @param url     URL
      * @param headers 请求头
      * @return 请求结果
      */
@@ -156,6 +155,53 @@ public class HttpUtils {
                 .execute()) {
             return response.body();
         }
+    }
+
+    /**
+     * Prepares the request data (headers and body) for API calls based on configuration
+     *
+     * @param config      The user configuration containing API settings
+     * @param messageText The message text to include in the request (can be null for some requests)
+     * @return Map containing headers and requestBody
+     */
+    public static Map<String, Object> prepareRequestData(UserConfigDO config, String messageText) {
+        // Prepare headers
+        Map<String, String> headers = new HashMap<>(config.getHeaders() != null ? config.getHeaders() : new HashMap<>());
+
+        // Add API key to headers based on placement
+        if ("header".equals(config.getApiKeyPlacement()) || config.getApiKeyPlacement() == null) {
+            headers.put("Authorization", "Bearer " + config.getApiKey());
+        } else if ("custom_header".equals(config.getApiKeyPlacement()) && config.getApiKeyHeader() != null) {
+            headers.put(config.getApiKeyHeader(), config.getApiKey());
+        }
+
+        // Ensure Content-Type header exists
+        if (!headers.containsKey("Content-Type")) {
+            headers.put("Content-Type", "application/json");
+        }
+
+        // Prepare request body by cloning the template
+        Map<String, Object> requestBody = new HashMap<>(config.getRequestTemplate());
+
+        // Add API key to body if needed
+        if ("body".equals(config.getApiKeyPlacement()) && config.getApiKeyBodyPath() != null) {
+            JsonUtils.setValueByPath(requestBody, config.getApiKeyBodyPath(), config.getApiKey());
+        }
+
+        // Add the message text to the request body at the specified path if provided
+        if (messageText != null && StringUtils.hasText(config.getRequestTextPath())) {
+            JsonUtils.setValueByPath(requestBody, config.getRequestTextPath(), messageText);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("headers", headers);
+        result.put("requestBody", requestBody);
+
+        return result;
+    }
+
+    private String append(String base, Map<String, ?> query, boolean fragment) {
+        return append(base, query, null, fragment);
     }
 
 }
