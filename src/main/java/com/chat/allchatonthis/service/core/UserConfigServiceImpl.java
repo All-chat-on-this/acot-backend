@@ -174,10 +174,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
             } else {
                 // If test fails, set isAvailable to false if the configuration has an ID
                 if (config.getId() != null) {
-                    UserConfigDO updateConfig = new UserConfigDO();
-                    updateConfig.setId(config.getId());
-                    updateConfig.setIsAvailable(false);
-                    updateById(updateConfig);
+                    setAvailable(config.getId(), false);
 
                     // Also update the current object
                     config.setIsAvailable(false);
@@ -194,10 +191,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
 
             // If test fails due to exception, set isAvailable to false if the configuration has an ID
             if (config.getId() != null) {
-                UserConfigDO updateConfig = new UserConfigDO();
-                updateConfig.setId(config.getId());
-                updateConfig.setIsAvailable(false);
-                updateById(updateConfig);
+                setAvailable(config.getId(), false);
 
                 // Also update the current object
                 config.setIsAvailable(false);
@@ -209,6 +203,14 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                     .error(e.getMessage())
                     .build();
         }
+    }
+
+    @Override
+    public void setAvailable(Long configId, boolean available) {
+        UserConfigDO updateConfig = new UserConfigDO();
+        updateConfig.setId(configId);
+        updateConfig.setIsAvailable(available);
+        updateById(updateConfig);
     }
 
     /**

@@ -75,5 +75,22 @@ public interface ErrorCodeConstants {
 
     // ========== CONFIG ERRORS ==========
     Integer CONFIG_NOT_EXISTS = 3001; // Config not exists
+    
+    // ========== CONVERSATION ERRORS ==========
+    ErrorCode CONVERSATION_NOT_EXISTS = new ErrorCode(1_002_030_000, "Conversation not found or access denied");
+    ErrorCode CONVERSATION_ACCESS_DENIED = new ErrorCode(1_002_030_001, "You don't have permission to access this conversation");
+    ErrorCode CONVERSATION_UPDATE_FAILED = new ErrorCode(1_002_030_002, "Failed to update conversation");
+    ErrorCode CONVERSATION_DELETE_FAILED = new ErrorCode(1_002_030_003, "Failed to delete conversation");
+    
+    // ========== CONVERSATION MESSAGE ERRORS ==========
+    ErrorCode MESSAGE_NOT_EXISTS = new ErrorCode(1_002_031_000, "Message not found or access denied");
+    ErrorCode MESSAGE_CREATE_FAILED = new ErrorCode(1_002_031_001, "Failed to create message");
+    ErrorCode MESSAGE_DELETE_FAILED = new ErrorCode(1_002_031_002, "Failed to delete message");
+    ErrorCode MESSAGE_SEND_FAILED = new ErrorCode(1_002_031_003, "Failed to send message");
+    
+    // ========== API CONFIGURATION ERRORS ==========
+    ErrorCode CONFIGURATION_NOT_EXISTS = new ErrorCode(1_002_032_000, "Configuration not found or access denied");
+    ErrorCode CONFIGURATION_NOT_AVAILABLE = new ErrorCode(1_002_032_001, "Configuration is not available, please test it first");
+    ErrorCode API_CALL_FAILED = new ErrorCode(1_002_032_002, "API call failed: {}");
 
 }

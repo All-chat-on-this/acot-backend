@@ -62,4 +62,11 @@ public interface UserConfigService extends IService<UserConfigDO> {
      * @return Test response with success/failure and any results
      */
     ConfigTestVO testConfig(UserConfigDO config, Long userId);
+
+    /**
+     * Set the availability of a conversation
+     * @param configId The conversation ID to set the availability for
+     * @param available The availability to set
+     */
+    void setAvailable(Long configId, boolean available);
 } 
