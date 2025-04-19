@@ -1,4 +1,4 @@
-package com.chat.allchatonthis.service.core;
+package com.chat.allchatonthis.service.core.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -10,6 +10,8 @@ import com.chat.allchatonthis.entity.dataobject.ConversationDO;
 import com.chat.allchatonthis.entity.vo.conversation.ConversationPageReqVO;
 import com.chat.allchatonthis.es.document.ConversationDocument;
 import com.chat.allchatonthis.mapper.ConversationMapper;
+import com.chat.allchatonthis.service.core.ConversationMessageService;
+import com.chat.allchatonthis.service.core.ConversationService;
 import com.chat.allchatonthis.service.es.ESConversationService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

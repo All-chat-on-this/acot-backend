@@ -1,8 +1,9 @@
-package com.chat.allchatonthis.service.social;
+package com.chat.allchatonthis.service.social.impl;
 
 import cn.hutool.core.lang.Assert;
 import com.chat.allchatonthis.common.util.http.HttpUtils;
 import com.chat.allchatonthis.enums.SocialTypeEnum;
+import com.chat.allchatonthis.service.social.SocialClientService;
 import com.google.common.annotations.VisibleForTesting;
 import com.xingyuv.jushauth.model.AuthCallback;
 import com.xingyuv.jushauth.model.AuthResponse;

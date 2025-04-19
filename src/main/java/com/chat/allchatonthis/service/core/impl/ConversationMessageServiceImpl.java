@@ -1,4 +1,4 @@
-package com.chat.allchatonthis.service.core;
+package com.chat.allchatonthis.service.core.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -9,6 +9,9 @@ import com.chat.allchatonthis.entity.dataobject.ConversationDO;
 import com.chat.allchatonthis.entity.dataobject.ConversationMessageDO;
 import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
 import com.chat.allchatonthis.mapper.ConversationMessageMapper;
+import com.chat.allchatonthis.service.core.ConversationMessageService;
+import com.chat.allchatonthis.service.core.ConversationService;
+import com.chat.allchatonthis.service.core.UserConfigService;
 import com.chat.allchatonthis.service.es.ESConversationService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.chat.allchatonthis.service.auth;
+package com.chat.allchatonthis.service.auth.impl;
 
 import com.chat.allchatonthis.common.exception.ServiceException;
 import com.chat.allchatonthis.common.util.token.JwtUtils;
@@ -6,6 +6,7 @@ import com.chat.allchatonthis.config.security.model.LoginUser;
 import com.chat.allchatonthis.entity.dataobject.UserDO;
 import com.chat.allchatonthis.entity.vo.user.UserInfomationVO;
 import com.chat.allchatonthis.enums.SocialTypeEnum;
+import com.chat.allchatonthis.service.auth.AuthService;
 import com.chat.allchatonthis.service.core.UserService;
 import com.chat.allchatonthis.service.social.SocialClientService;
 import com.xingyuv.jushauth.model.AuthUser;

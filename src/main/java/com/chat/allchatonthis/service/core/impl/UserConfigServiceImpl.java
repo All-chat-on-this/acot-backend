@@ -1,4 +1,4 @@
-package com.chat.allchatonthis.service.core;
+package com.chat.allchatonthis.service.core.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -8,6 +8,7 @@ import com.chat.allchatonthis.common.util.json.JsonUtils;
 import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
 import com.chat.allchatonthis.entity.vo.config.ConfigTestVO;
 import com.chat.allchatonthis.mapper.UserConfigMapper;
+import com.chat.allchatonthis.service.core.UserConfigService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
