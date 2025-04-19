@@ -12,15 +12,15 @@ import com.chat.allchatonthis.es.repository.ConversationRepository;
 import com.chat.allchatonthis.service.es.ESConversationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.Criteria;
+import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -37,7 +37,7 @@ public class ESConversationServiceImpl implements ESConversationService {
 
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository messageRepository;
-    private final ElasticsearchRestTemplate elasticsearchRestTemplate;
+    private final ElasticsearchOperations elasticsearchOperations;
 
     @Override
     @Async
@@ -47,7 +47,7 @@ public class ESConversationServiceImpl implements ESConversationService {
             if (document == null) {
                 return null;
             }
-            
+
             return conversationRepository.save(document);
         } catch (Exception e) {
             log.error("Error saving conversation to Elasticsearch", e);
@@ -63,7 +63,7 @@ public class ESConversationServiceImpl implements ESConversationService {
             if (document == null) {
                 return;
             }
-            
+
             messageRepository.save(document);
         } catch (Exception e) {
             log.error("Error saving conversation message to Elasticsearch", e);
@@ -78,12 +78,12 @@ public class ESConversationServiceImpl implements ESConversationService {
             if (!conversationRepository.existsById(conversation.getId())) {
                 return saveConversation(conversation);
             }
-            
+
             ConversationDocument document = ESEntityMapper.toConversationDocument(conversation);
             if (document == null) {
                 return null;
             }
-            
+
             return conversationRepository.save(document);
         } catch (Exception e) {
             log.error("Error updating conversation in Elasticsearch", e);
@@ -126,105 +126,107 @@ public class ESConversationServiceImpl implements ESConversationService {
     public PageResult<ConversationDocument> searchConversations(Long userId, ConversationPageReqVO reqVO) {
         try {
             String searchText = reqVO.getSearchText();
-            
+
             // If no search text is provided, return regular paginated results
             if (!StringUtils.hasText(searchText)) {
                 PageRequest pageRequest = PageRequest.of(
-                        reqVO.getPageNo() - 1, 
-                        reqVO.getPageSize(), 
+                        reqVO.getPageNo() - 1,
+                        reqVO.getPageSize(),
                         Sort.by(Sort.Direction.DESC, "updateTime"));
-                
+
                 Page<ConversationDocument> page = conversationRepository.findByUserIdAndDeleted(
                         userId, false, pageRequest);
-                
+
                 return new PageResult<>(page.getContent(), page.getTotalElements());
             }
-            
-            // Build a complex query that searches both conversation titles and message content/thinking text
-            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
-                    .must(QueryBuilders.termQuery("userId", userId))
-                    .must(QueryBuilders.termQuery("deleted", false));
-            
-            // Search within conversation title
-            BoolQueryBuilder shouldQuery = QueryBuilders.boolQuery()
-                    .should(QueryBuilders.matchQuery("title", searchText));
-            
-            boolQuery.must(shouldQuery);
-            
-            // Create the search query
-            NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
-                    .withQuery(boolQuery)
-                    .withPageable(PageRequest.of(
-                            reqVO.getPageNo() - 1,
-                            reqVO.getPageSize(),
-                            Sort.by(Sort.Direction.DESC, "updateTime")))
-                    .build();
-            
-            // Execute the search
+
+            // Search directly in titles first
             Page<ConversationDocument> directResults = conversationRepository.findByUserIdAndTitleContainingAndDeleted(
-                    userId, searchText, false, 
+                    userId, searchText, false,
                     PageRequest.of(reqVO.getPageNo() - 1, reqVO.getPageSize(), Sort.by(Sort.Direction.DESC, "updateTime")));
-            
+
             // If we have enough direct results, return them
             if (directResults.getTotalElements() >= reqVO.getPageSize()) {
                 return new PageResult<>(directResults.getContent(), directResults.getTotalElements());
             }
-            
+
             // Otherwise, find conversations that have matching messages
-            BoolQueryBuilder messageQuery = QueryBuilders.boolQuery()
-                    .must(QueryBuilders.termQuery("userId", userId))
-                    .must(QueryBuilders.termQuery("deleted", false));
-            
-            // Search within message content and thinking text
-            BoolQueryBuilder messageTextQuery = QueryBuilders.boolQuery()
-                    .should(QueryBuilders.matchQuery("content", searchText))
-                    .should(QueryBuilders.matchQuery("thinkingText", searchText));
-            
-            messageQuery.must(messageTextQuery);
-            
-            NativeSearchQuery messageSearchQuery = new NativeSearchQueryBuilder()
-                    .withQuery(messageQuery)
-                    .build();
-            
-            SearchHits<ConversationMessageDocument> messageHits = elasticsearchRestTemplate.search(
-                    messageSearchQuery, ConversationMessageDocument.class);
-            
+            Criteria messageUserCriteria = new Criteria("userId").is(userId);
+            Criteria messageDeletedCriteria = new Criteria("deleted").is(false);
+
+            // Create criteria for content and thinking text
+            Criteria contentCriteria = new Criteria("content").contains(searchText);
+            Criteria thinkingCriteria = new Criteria("thinkingText").contains(searchText);
+
+            // Combine criteria
+            Criteria finalCriteria = messageUserCriteria.and(messageDeletedCriteria).and(
+                    new Criteria().or(contentCriteria).or(thinkingCriteria));
+
+            // Build the query
+            Query messageQuery = new CriteriaQuery(finalCriteria);
+
+            // Execute the search
+            SearchHits<ConversationMessageDocument> messageHits = elasticsearchOperations.search(
+                    messageQuery, ConversationMessageDocument.class);
+
             // Extract conversation IDs from message search results
             Set<Long> conversationIds = new HashSet<>();
-            messageHits.forEach(hit -> conversationIds.add(hit.getContent().getConversationId()));
-            
+            for (SearchHit<ConversationMessageDocument> hit : messageHits.getSearchHits()) {
+                conversationIds.add(hit.getContent().getConversationId());
+            }
+
             // Add direct result IDs to the set
-            directResults.forEach(doc -> conversationIds.add(doc.getId()));
-            
-            List<ConversationDocument> combinedResults = new ArrayList<>();
-            
-            // Add direct results first
-            combinedResults.addAll(directResults.getContent());
-            
+            for (ConversationDocument doc : directResults.getContent()) {
+                conversationIds.add(doc.getId());
+            }
+
+            List<ConversationDocument> combinedResults = new ArrayList<>(directResults.getContent());
+
             // If we still need more results, get conversations by the IDs found in message search
             if (combinedResults.size() < reqVO.getPageSize() && !conversationIds.isEmpty()) {
                 // Remove IDs that are already in the direct results
-                directResults.forEach(doc -> conversationIds.remove(doc.getId()));
-                
+                for (ConversationDocument doc : directResults.getContent()) {
+                    conversationIds.remove(doc.getId());
+                }
+
                 if (!conversationIds.isEmpty()) {
-                    BoolQueryBuilder idQuery = QueryBuilders.boolQuery()
-                            .must(QueryBuilders.termQuery("userId", userId))
-                            .must(QueryBuilders.termQuery("deleted", false))
-                            .must(QueryBuilders.termsQuery("_id", conversationIds));
-                    
-                    NativeSearchQuery idSearchQuery = new NativeSearchQueryBuilder()
-                            .withQuery(idQuery)
-                            .withPageable(PageRequest.of(0, reqVO.getPageSize() - combinedResults.size(), 
-                                    Sort.by(Sort.Direction.DESC, "updateTime")))
-                            .build();
-                    
-                    SearchHits<ConversationDocument> idSearchHits = elasticsearchRestTemplate.search(
-                            idSearchQuery, ConversationDocument.class);
-                    
-                    idSearchHits.forEach(hit -> combinedResults.add(hit.getContent()));
+                    // Get additional conversations
+                    List<ConversationDocument> additionalConversations = new ArrayList<>();
+
+                    // We'll do it in batches to avoid too large queries
+                    List<Long> idsList = new ArrayList<>(conversationIds);
+                    for (int i = 0; i < idsList.size(); i += 100) {
+                        int end = Math.min(i + 100, idsList.size());
+                        List<Long> batchIds = idsList.subList(i, end);
+
+                        // Get conversations for this batch of IDs
+                        List<ConversationDocument> batch = new ArrayList<>();
+                        conversationRepository.findAllById(batchIds).forEach(conversationDocument -> {
+                            if (conversationDocument.getUserId().equals(userId) && !conversationDocument.getDeleted()) {
+                                batch.add(conversationDocument);
+                            }
+                        });
+
+                        additionalConversations.addAll(batch);
+
+                        if (combinedResults.size() + additionalConversations.size() >= reqVO.getPageSize()) {
+                            break;
+                        }
+                    }
+
+                    // Sort by update time
+                    additionalConversations.sort((a, b) -> b.getUpdateTime().compareTo(a.getUpdateTime()));
+
+                    // Add to results (up to page size limit)
+                    int remaining = reqVO.getPageSize() - combinedResults.size();
+                    if (additionalConversations.size() > remaining) {
+                        additionalConversations = additionalConversations.subList(0, remaining);
+                    }
+
+                    combinedResults.addAll(additionalConversations);
                 }
             }
-            
+
             return new PageResult<>(combinedResults, (long) combinedResults.size());
         } catch (Exception e) {
             log.error("Error searching conversations in Elasticsearch", e);
