@@ -6,7 +6,7 @@ import com.chat.allchatonthis.entity.dataobject.ConversationMessageDO;
 import com.chat.allchatonthis.entity.vo.conversation.ConversationPageReqVO;
 import com.chat.allchatonthis.es.document.ConversationDocument;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Elasticsearch service for conversation operations
@@ -35,7 +35,7 @@ public interface ESConversationService {
      * @param conversation The conversation to update
      * @return The updated conversation document
      */
-    ConversationDocument updateConversation(ConversationDO conversation);
+    CompletableFuture<ConversationDocument> updateConversation(ConversationDO conversation);
 
     /**
      * Delete conversation from Elasticsearch

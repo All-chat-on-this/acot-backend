@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -72,22 +73,22 @@ public class ESConversationServiceImpl implements ESConversationService {
 
     @Override
     @Async
-    public ConversationDocument updateConversation(ConversationDO conversation) {
+    public CompletableFuture<ConversationDocument> updateConversation(ConversationDO conversation) {
         try {
             // Check if conversation exists in ES
             if (!conversationRepository.existsById(conversation.getId())) {
-                return saveConversation(conversation);
+                return CompletableFuture.completedFuture(saveConversation(conversation));
             }
 
             ConversationDocument document = ESEntityMapper.toConversationDocument(conversation);
             if (document == null) {
-                return null;
+                return CompletableFuture.completedFuture(null);
             }
 
-            return conversationRepository.save(document);
+            return CompletableFuture.completedFuture(conversationRepository.save(document));
         } catch (Exception e) {
             log.error("Error updating conversation in Elasticsearch", e);
-            return null;
+            return CompletableFuture.completedFuture(null);
         }
     }
 
