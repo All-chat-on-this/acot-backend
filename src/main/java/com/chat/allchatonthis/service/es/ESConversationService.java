@@ -19,7 +19,7 @@ public interface ESConversationService {
      * @param conversation The conversation to save
      * @return The saved conversation document
      */
-    ConversationDocument saveConversation(ConversationDO conversation);
+    CompletableFuture<ConversationDocument> saveConversation(ConversationDO conversation);
 
     /**
      * Save conversation message to Elasticsearch
@@ -27,7 +27,7 @@ public interface ESConversationService {
      * @param conversationMessage The message to save
      * @param userId The user ID
      */
-    void saveConversationMessage(ConversationMessageDO conversationMessage, Long userId);
+    CompletableFuture<Void> saveConversationMessage(ConversationMessageDO conversationMessage, Long userId);
 
     /**
      * Update conversation in Elasticsearch
@@ -43,14 +43,14 @@ public interface ESConversationService {
      * @param id The conversation ID
      * @param userId The user ID
      */
-    void deleteConversation(Long id, Long userId);
+    CompletableFuture<Void> deleteConversation(Long id, Long userId);
 
     /**
      * Delete conversation message from Elasticsearch
      *
      * @param id The message ID
      */
-    void deleteConversationMessage(Long id);
+    CompletableFuture<Void> deleteConversationMessage(Long id);
 
     /**
      * Delete all messages in a conversation from Elasticsearch
@@ -58,7 +58,7 @@ public interface ESConversationService {
      * @param conversationId The conversation ID
      * @param userId The user ID
      */
-    void deleteConversationMessages(Long conversationId, Long userId);
+    CompletableFuture<Void> deleteConversationMessages(Long conversationId, Long userId);
 
     /**
      * Search for conversations
