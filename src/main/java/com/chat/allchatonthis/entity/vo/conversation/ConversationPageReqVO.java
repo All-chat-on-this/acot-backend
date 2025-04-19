@@ -12,6 +12,6 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class ConversationPageReqVO extends PageParam {
 
-    @Schema(description = "对话标题，模糊匹配", example = "问题")
-    private String title;
+    @Schema(description = "[对话标题、对话文本、思考文本]，模糊匹配", example = "问题")
+    private String searchText;
 } 

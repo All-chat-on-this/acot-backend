@@ -22,10 +22,10 @@ public interface ConversationService extends IService<ConversationDO> {
      * Get conversations for the current user with pagination
      * 
      * @param userId The user ID
-     * @param pageParam Pagination parameters
+     * @param conversationPageReqVO Pagination parameters
      * @return Paginated list of conversations
      */
-    PageResult<ConversationDO> getConversationPage(Long userId, PageParam pageParam);
+    PageResult<ConversationDO> getConversationPage(Long userId, ConversationPageReqVO conversationPageReqVO);
     
     /**
      * Get a specific conversation by ID
