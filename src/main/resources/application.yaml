@@ -81,6 +81,9 @@ server:
 logging:
   file:
     name: ${user.home}/logs/${spring.application.name}.log # 日志文件名，全路径
+  level:
+    com.chat.allchatonthis.controller: debug # Enable controller request logging with INFO level by default
+    org.springframework.web.filter.CommonsRequestLoggingFilter: debug # Enable request logging filter
 
 # JWT Configuration
 jwt:

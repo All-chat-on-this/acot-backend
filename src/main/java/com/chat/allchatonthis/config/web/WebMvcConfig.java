@@ -1,10 +1,18 @@
 package com.chat.allchatonthis.config.web;
 
+import com.chat.allchatonthis.common.enums.WebFilterOrderEnum;
 import com.chat.allchatonthis.config.web.resolver.LoginUserMethodArgumentResolver;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+import org.springframework.web.filter.CommonsRequestLoggingFilter;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -43,5 +51,39 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // Adds /api prefix to all methods in classes annotated with @RestController
         // For example, @RestController methods with @GetMapping("/users") will be accessible at /api/users
         configurer.addPathPrefix("/api", c -> c.isAnnotationPresent(RestController.class));
+    }
+    
+    /**
+     * Configures CORS (Cross-Origin Resource Sharing) for the application.
+     * This allows requests from different origins to access our API.
+     *
+     * @param registry The CorsRegistry to customize
+     */
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOriginPatterns("*")  // Allow all origins
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                .allowedHeaders("*")  // Allow all headers
+                .allowCredentials(true)  // Allow cookies
+                .maxAge(3600);  // Cache preflight requests for 1 hour
+    }
+    
+    /**
+     * Creates a request logging filter that logs all requests received by the application.
+     * This provides detailed logging of incoming HTTP requests.
+     *
+     * @return A configured CommonsRequestLoggingFilter bean
+     */
+    @Bean
+    public CommonsRequestLoggingFilter requestLoggingFilter() {
+        CommonsRequestLoggingFilter loggingFilter = new CommonsRequestLoggingFilter();
+        loggingFilter.setIncludeClientInfo(true);
+        loggingFilter.setIncludeQueryString(true);
+        loggingFilter.setIncludePayload(true);
+        loggingFilter.setMaxPayloadLength(10000);
+        loggingFilter.setIncludeHeaders(true);
+        loggingFilter.setAfterMessagePrefix("REQUEST DATA: ");
+        return loggingFilter;
     }
 }
