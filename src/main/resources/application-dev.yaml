@@ -53,10 +53,7 @@ spring:
       host: 117.72.111.131 # 地址
       port: 6379 # 端口
       database: 1 # 数据库索引
-#    password: mkyr15973 # 密码，建议生产环境开启
-
-  elasticsearch:
-    uris: http://117.72.111.131:9200
+      password: mkyr15973 # 密码，建议生产环境开启
 
   # Jackson 配置项
   jackson:
@@ -71,6 +68,23 @@ spring:
     type: REDIS
     redis:
       time-to-live: 1h # 设置过期时间为 1 小时
+      key-prefix: acot_cache_ # 缓存key前缀
+      use-key-prefix: true # 是否使用前缀
+      cache-null-values: true # 是否缓存空值，可以防止缓存穿透
+
+# Redis 和 Redisson 额外配置
+redisson:
+  config:
+    single:
+      address: redis://${spring.data.redis.host}:${spring.data.redis.port}
+      database: ${spring.data.redis.database}
+      connection-pool-size: 64
+      connection-minimum-idle-size: 8
+      idle-connection-timeout: 10000
+      retry-attempts: 3
+      retry-interval: 1000
+      connection-timeout: 10000
+      timeout: 3000
 
 --- #################### 定时任务相关配置 ####################
 

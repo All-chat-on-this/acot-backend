@@ -1,6 +1,7 @@
 package com.chat.allchatonthis.config.mybatis.core.dataobject;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.OrderBy;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -21,11 +22,13 @@ public abstract class BaseDO implements Serializable, TransPojo {
     /**
      * 创建时间
      */
+    @OrderBy(sort = 1)
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
     /**
      * 最后更新时间
      */
+    @OrderBy(sort = 2)
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
     /**

@@ -12,9 +12,12 @@ import com.chat.allchatonthis.mapper.ConversationMessageMapper;
 import com.chat.allchatonthis.service.core.ConversationMessageService;
 import com.chat.allchatonthis.service.core.ConversationService;
 import com.chat.allchatonthis.service.core.UserConfigService;
-import com.chat.allchatonthis.service.es.ESConversationService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -27,13 +30,14 @@ import static com.chat.allchatonthis.common.enums.ErrorCodeConstants.*;
 @Service
 @AllArgsConstructor
 @Slf4j
+@CacheConfig(cacheNames = "conversation_message")
 public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMessageMapper, ConversationMessageDO> implements ConversationMessageService {
 
     private final ConversationService conversationService;
     private final UserConfigService userConfigService;
-    private final ESConversationService esConversationService;
 
     @Override
+    @Cacheable(key = "'conversation:' + #conversationId + ':user:' + #userId")
     public List<ConversationMessageDO> getMessages(Long conversationId, Long userId) {
         // Validate that the conversation belongs to the user
         ConversationDO conversation = conversationService.getConversation(conversationId, userId);
@@ -47,6 +51,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
     }
 
     @Override
+    @Cacheable(key = "'id:' + #id + ':user:' + #userId")
     public ConversationMessageDO getMessage(Long id, Long userId) {
         ConversationMessageDO message = getById(id);
         if (message == null) {
@@ -64,6 +69,9 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(key = "'conversation:' + #message.conversationId + ':user:' + #userId")
+    })
     public ConversationMessageDO createMessage(ConversationMessageDO message, Long userId) {
         // Validate that the conversation belongs to the user
         ConversationDO conversation = conversationService.getConversation(message.getConversationId(), userId);
@@ -72,9 +80,6 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
         }
 
         save(message);
-
-        // Index in Elasticsearch 
-        esConversationService.saveConversationMessage(message, userId);
 
         // Update the conversation's update time
         conversationService.lambdaUpdate()
@@ -86,6 +91,9 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId")
+    })
     public ConversationMessageDO sendMessage(String userMessage, Long configId, Long conversationId, Long userId) {
         // Validate that the conversation belongs to the user
         ConversationDO conversation = conversationService.getConversation(conversationId, userId);
@@ -105,9 +113,6 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
                 .setRole("user")
                 .setContent(userMessage);
         save(userMessageDO);
-        
-        // Index user message in Elasticsearch
-        esConversationService.saveConversationMessage(userMessageDO, userId);
 
         try {
             // Use the common method to prepare request data
@@ -149,16 +154,10 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
                     .setContent(content)
                     .setThinkingText(thinking);
             save(assistantMessageDO);
-            
-            // Index assistant message in Elasticsearch
-            esConversationService.saveConversationMessage(assistantMessageDO, userId);
 
             // Update the conversation's update time
             conversation.setUpdateTime(assistantMessageDO.getUpdateTime());
             conversationService.updateById(conversation);
-            
-            // Update conversation in Elasticsearch
-            esConversationService.updateConversation(conversation);
 
             // Mark the configuration as available since it was successfully used
             markConfigurationAsAvailable(configId, userId);
@@ -173,9 +172,6 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
                     .setRole("system")
                     .setContent("Error: " + e.getMessage());
             save(errorMessageDO);
-            
-            // Index error message in Elasticsearch
-            esConversationService.saveConversationMessage(errorMessageDO, userId);
 
             if (e instanceof ServiceException) {
                 throw e;
@@ -187,29 +183,29 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(key = "'id:' + #id + ':user:' + #userId"),
+        @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId", condition = "#result == true")
+    })
     public boolean deleteMessage(Long id, Long userId) {
         ConversationMessageDO message = getMessage(id, userId);
         if (message == null) {
             return false;
         }
         
-        // Delete from Elasticsearch
-        esConversationService.deleteConversationMessage(id);
-
+        Long conversationId = message.getConversationId();
         return removeById(id);
     }
 
     @Override
     @Transactional
+    @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId")
     public boolean deleteMessagesByConversationId(Long conversationId, Long userId) {
         // Validate that the conversation belongs to the user
         ConversationDO conversation = conversationService.getConversation(conversationId, userId);
         if (conversation == null) {
             return false;
         }
-        
-        // Delete from Elasticsearch
-        esConversationService.deleteConversationMessages(conversationId, userId);
 
         return remove(new LambdaQueryWrapper<ConversationMessageDO>()
                 .eq(ConversationMessageDO::getConversationId, conversationId));
