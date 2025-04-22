@@ -196,52 +196,6 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    /**
-     * Update user's nickname and synchronize with LoginUser
-     *
-     * @param userId   User ID
-     * @param nickname New nickname
-     * @return true if update successful
-     */
-    @Transactional
-    public boolean updateUserNickname(Long userId, String nickname) {
-        // Update in database
-        boolean updated = userService.updateNickname(userId, nickname);
-
-        if (updated) {
-            // Update in current security context if this user is logged in
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.getPrincipal() instanceof LoginUser loginUser) {
-
-                if (loginUser.getUserId().equals(userId)) {
-                    loginUser.setNickname(nickname);
-                }
-            }
-        }
-
-        return updated;
-    }
-
-    @Override
-    public UserInfomationVO getUserInformation(Long userId) {
-        // Get user from database
-        UserDO user = userService.getById(userId);
-        if (user == null) {
-            throw new ServiceException(AUTH_USER_NOT_FOUND.getCode(), "User not found with ID: " + userId);
-        }
-
-        // Convert to LoginUser
-        LoginUser loginUser = convertToLoginUser(user);
-
-        // Build UserInfomationVO without token information
-        return UserInfomationVO.builder()
-                .userId(loginUser.getUserId())
-                .username(loginUser.getUsername())
-                .nickname(loginUser.getNickname())
-                .loginType(loginUser.getLoginType())
-                .build();
-    }
-
     @Override
     public boolean logout(String token) {
         // Validate token

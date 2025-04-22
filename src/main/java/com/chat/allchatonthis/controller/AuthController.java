@@ -94,15 +94,6 @@ public class AuthController {
     }
 
     /**
-     * Get user information by ID
-     */
-    @GetMapping("/user-information")
-    public CommonResult<UserInfomationVO> getUserInformation(@LoginUser Long userId) {
-        UserInfomationVO userInfo = authService.getUserInformation(userId);
-        return CommonResult.success(userInfo);
-    }
-
-    /**
      * Logout the user
      */
     @PostMapping("/logout")

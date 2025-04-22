@@ -56,23 +56,6 @@ public interface AuthService {
      * @return True if token is valid
      */
     boolean validateToken(String token);
-
-    /**
-     * Update user's nickname and synchronize with LoginUser
-     *
-     * @param userId   User ID
-     * @param nickname New nickname
-     * @return true if update successful
-     */
-    boolean updateUserNickname(Long userId, String nickname);
-    
-    /**
-     * Get user information by user ID
-     *
-     * @param userId User ID
-     * @return User information
-     */
-    UserInfomationVO getUserInformation(Long userId);
     
     /**
      * Logout the user
