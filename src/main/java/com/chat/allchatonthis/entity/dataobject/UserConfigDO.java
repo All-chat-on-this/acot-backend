@@ -1,6 +1,7 @@
 package com.chat.allchatonthis.entity.dataobject;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.chat.allchatonthis.config.mybatis.core.dataobject.BaseDO;
 import lombok.AllArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
+@TableName("user_config")
 public class UserConfigDO extends BaseDO {
     private Long id;
     private Boolean isAvailable; // Whether the configuration is available for use
@@ -36,12 +38,12 @@ public class UserConfigDO extends BaseDO {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private Map<String, Object> responseTemplate; // JSON template for response handling
 
+    // Custom headers
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, String> headers; // Additional HTTP headers
+
     // Request and Response handling strategy
     private String requestTextPath; // JSON path for request text
     private String responseTextPath; // JSON path for response text
     private String responseThinkingTextPath; // JSON path for thinking text in response
-
-    // Custom headers
-    @TableField(typeHandler = JacksonTypeHandler.class)
-    private Map<String, String> headers; // Additional HTTP headers
 }

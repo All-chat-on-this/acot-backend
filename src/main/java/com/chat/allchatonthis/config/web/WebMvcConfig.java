@@ -1,15 +1,10 @@
 package com.chat.allchatonthis.config.web;
 
-import com.chat.allchatonthis.common.enums.WebFilterOrderEnum;
 import com.chat.allchatonthis.config.web.resolver.LoginUserMethodArgumentResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -32,7 +27,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
      * Adds custom HandlerMethodArgumentResolvers to the Spring MVC configuration.
      * This method registers our custom LoginUserMethodArgumentResolver which will
      * process the @LoginUser annotation in controller methods.
-     * 
+     *
      * @param resolvers List of argument resolvers to be registered
      */
     @Override
@@ -43,7 +38,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     /**
      * Configures path matching options for the application.
      * This method applies a unified URL prefix pattern to all REST controllers.
-     * 
+     *
      * @param configurer The PathMatchConfigurer to customize
      */
     @Override
@@ -52,7 +47,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // For example, @RestController methods with @GetMapping("/users") will be accessible at /api/users
         configurer.addPathPrefix("/api", c -> c.isAnnotationPresent(RestController.class));
     }
-    
+
     /**
      * Configures CORS (Cross-Origin Resource Sharing) for the application.
      * This allows requests from different origins to access our API.
@@ -68,7 +63,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .allowCredentials(true)  // Allow cookies
                 .maxAge(3600);  // Cache preflight requests for 1 hour
     }
-    
+
     /**
      * Creates a request logging filter that logs all requests received by the application.
      * This provides detailed logging of incoming HTTP requests.

@@ -118,6 +118,9 @@ mybatis-plus-join:
   table-alias: t # 表别名(默认 t)
   logic-del-type: on # 副表逻辑删除条件的位置，支持 WHERE、ON，默认 ON
 
+mybatis:
+  lazy-initialization: false # 延迟加载，默认 false
+
 # VO 转换（数据翻译）相关
 easy-trans:
   is-enable-global: true # 启用全局翻译（拦截所有 SpringMVC ResponseBody 进行自动翻译 )。如果对于性能要求很高可关闭此配置，或通过 @IgnoreTrans 忽略某个接口
@@ -140,3 +143,7 @@ justauth:
       redirect-uri: ${WX_REDIRECT_URI:http://localhost:8080/api/auth/social/callback?type=32}
 
 debug: false
+
+acot:
+  info:
+    base-package: com.chat.allchatonthis.mapper

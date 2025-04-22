@@ -1,0 +1,3 @@
+com.chat.allchatonthis.config.datasource.config.DataSourceAutoConfiguration
+com.chat.allchatonthis.config.mybatis.config.AcotMybatisAutoConfiguration
+com.chat.allchatonthis.config.translate.config.AcotTranslateAutoConfiguration

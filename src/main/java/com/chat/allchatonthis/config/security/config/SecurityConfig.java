@@ -1,5 +1,6 @@
 package com.chat.allchatonthis.config.security.config;
 
+import com.chat.allchatonthis.config.security.constants.SecurityConstants;
 import com.chat.allchatonthis.config.security.filter.JwtAuthenticationFilter;
 import com.chat.allchatonthis.config.security.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -56,12 +57,14 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/social/**").permitAll()
-                .requestMatchers("/api/public/**").permitAll()
-                .anyRequest().authenticated()
-            );
+            .authorizeHttpRequests(auth -> {
+                // Permit all public endpoints
+                SecurityConstants.PUBLIC_PATH_PATTERNS.forEach(
+                    pattern -> auth.requestMatchers(pattern).permitAll()
+                );
+                // Require authentication for any other request
+                auth.anyRequest().authenticated();
+            });
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
