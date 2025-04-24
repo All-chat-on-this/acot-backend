@@ -192,7 +192,7 @@ public class HttpUtils {
         }
 
         // Add the message text to the request body at the specified path if provided
-        if (messageText != null && StringUtils.hasText(config.getRequestMessageGroupPath())) {
+        if (StringUtils.hasText(messageText) && StringUtils.hasText(config.getRequestMessageGroupPath())) {
             // Create a message object with the role and content
             Map<String, Object> messageObj = new HashMap<>();
             String rolePath = StringUtils.hasText(config.getRequestRolePathFromGroup()) ? 

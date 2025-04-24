@@ -71,7 +71,7 @@ public class ConfigController {
     /**
      * Delete a configuration
      */
-    @DeleteMapping("/configs/{id}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public CommonResult<Boolean> deleteConfig(@PathVariable Long id, @LoginUser Long userId) {
         boolean result = userConfigService.deleteConfig(id, userId);
