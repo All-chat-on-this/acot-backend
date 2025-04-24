@@ -63,7 +63,7 @@ public class CacheMetricsConfig {
                 // Get estimated size by counting keys with the cache name pattern
                 String keyPattern = "acot_" + cacheName + "::*";
                 Set<String> keys = redisTemplate.keys(keyPattern);
-                int size = keys != null ? keys.size() : 0;
+                int size = keys.size();
 
                 log.info("Cache '{}': {} entries", cacheName, size);
 

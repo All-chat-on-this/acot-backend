@@ -8,6 +8,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import com.chat.allchatonthis.common.util.json.JsonUtils;
+import com.chat.allchatonthis.entity.dataobject.ConversationMessageDO;
 import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
@@ -16,7 +17,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -189,8 +192,125 @@ public class HttpUtils {
         }
 
         // Add the message text to the request body at the specified path if provided
-        if (messageText != null && StringUtils.hasText(config.getRequestTextPath())) {
-            JsonUtils.setValueByPath(requestBody, config.getRequestTextPath(), messageText);
+        if (messageText != null && StringUtils.hasText(config.getRequestMessageGroupPath())) {
+            // Create a message object with the role and content
+            Map<String, Object> messageObj = new HashMap<>();
+            String rolePath = StringUtils.hasText(config.getRequestRolePathFromGroup()) ? 
+                              config.getRequestRolePathFromGroup() : "role";
+                              
+            String textPath = StringUtils.hasText(config.getRequestTextPathFromGroup()) ? 
+                             config.getRequestTextPathFromGroup() : "content";
+                             
+            String roleValue = StringUtils.hasText(config.getRequestUserRoleField()) ? 
+                              config.getRequestUserRoleField() : "user";
+                              
+            messageObj.put(rolePath, roleValue);
+            messageObj.put(textPath, messageText);
+            
+            // Set the message in the message group
+            JsonUtils.setValueByPath(requestBody, config.getRequestMessageGroupPath(), new ArrayList<Map<String, Object>>());
+            
+            // Add the message to the message group
+            List<Map<String, Object>> messages = new ArrayList<>();
+            messages.add(messageObj);
+            JsonUtils.setValueByPath(requestBody, config.getRequestMessageGroupPath(), messages);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("headers", headers);
+        result.put("requestBody", requestBody);
+
+        return result;
+    }
+    
+    /**
+     * Prepares the request data (headers and body) for API calls based on configuration
+     * This version supports message group functionality with conversation history
+     *
+     * @param config           The user configuration containing API settings
+     * @param messageText      The message text to include in the request
+     * @param conversationMessages Previous messages in the conversation
+     * @return Map containing headers and requestBody
+     */
+    public static Map<String, Object> prepareRequestData(UserConfigDO config, String messageText, List<ConversationMessageDO> conversationMessages) {
+        // Prepare headers
+        Map<String, String> headers = new HashMap<>(config.getHeaders() != null ? config.getHeaders() : new HashMap<>());
+
+        // Add API key to headers based on placement
+        if ("header".equals(config.getApiKeyPlacement()) || config.getApiKeyPlacement() == null) {
+            headers.put("Authorization", "Bearer " + config.getApiKey());
+        } else if ("custom_header".equals(config.getApiKeyPlacement()) && config.getApiKeyHeader() != null) {
+            headers.put(config.getApiKeyHeader(), config.getApiKey());
+        }
+
+        // Ensure Content-Type header exists
+        if (!headers.containsKey("Content-Type")) {
+            headers.put("Content-Type", "application/json");
+        }
+
+        // Prepare request body by cloning the template
+        Map<String, Object> requestBody = new HashMap<>(config.getRequestTemplate());
+
+        // Add API key to body if needed
+        if ("body".equals(config.getApiKeyPlacement()) && config.getApiKeyBodyPath() != null) {
+            JsonUtils.setValueByPath(requestBody, config.getApiKeyBodyPath(), config.getApiKey());
+        }
+
+        // Extract field names and default values
+        String rolePath = StringUtils.hasText(config.getRequestRolePathFromGroup()) ? 
+                          config.getRequestRolePathFromGroup() : "role";
+                          
+        String textPath = StringUtils.hasText(config.getRequestTextPathFromGroup()) ? 
+                         config.getRequestTextPathFromGroup() : "content";
+                         
+        String userRoleValue = StringUtils.hasText(config.getRequestUserRoleField()) ? 
+                              config.getRequestUserRoleField() : "user";
+                              
+        String assistantRoleValue = StringUtils.hasText(config.getRequestAssistantField()) ? 
+                                   config.getRequestAssistantField() : "assistant";
+
+        // Create the message group and add conversation history
+        if (StringUtils.hasText(config.getRequestMessageGroupPath()) && (conversationMessages != null || messageText != null)) {
+            List<Map<String, Object>> messages = new ArrayList<>();
+            
+            // Add previous messages
+            if (conversationMessages != null) {
+                for (ConversationMessageDO message : conversationMessages) {
+                    // Skip system messages
+                    if ("system".equals(message.getRole())) {
+                        continue;
+                    }
+                    
+                    Map<String, Object> messageObj = new HashMap<>();
+                    // Map the role values appropriately
+                    if ("user".equals(message.getRole())) {
+                        messageObj.put(rolePath, userRoleValue);
+                    } else if ("assistant".equals(message.getRole())) {
+                        messageObj.put(rolePath, assistantRoleValue);
+                    } else {
+                        // Use the role as is for any other roles
+                        messageObj.put(rolePath, message.getRole());
+                    }
+                    
+                    messageObj.put(textPath, message.getContent());
+                    messages.add(messageObj);
+                }
+            }
+            
+            // Add the new user message
+            if (messageText != null) {
+                Map<String, Object> userMessage = new HashMap<>();
+                userMessage.put(rolePath, userRoleValue);
+                userMessage.put(textPath, messageText);
+                messages.add(userMessage);
+            }
+            
+            // Set the messages in the request body
+            JsonUtils.setValueByPath(requestBody, config.getRequestMessageGroupPath(), messages);
+        }
+        // For backward compatibility
+        else if (messageText != null && StringUtils.hasText(config.getRequestTextPathFromGroup())) {
+            JsonUtils.setValueByPath(requestBody, config.getRequestTextPathFromGroup(), messageText);
         }
 
         Map<String, Object> result = new HashMap<>();

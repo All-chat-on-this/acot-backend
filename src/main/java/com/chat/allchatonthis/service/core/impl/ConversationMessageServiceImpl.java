@@ -115,8 +115,13 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
         save(userMessageDO);
 
         try {
-            // Use the common method to prepare request data
-            Map<String, Object> requestData = HttpUtils.prepareRequestData(config, userMessage);
+            // Get previous messages in the conversation for history
+            List<ConversationMessageDO> previousMessages = list(new LambdaQueryWrapper<ConversationMessageDO>()
+                    .eq(ConversationMessageDO::getConversationId, conversationId)
+                    .orderByAsc(ConversationMessageDO::getCreateTime));
+
+            // Use the common method to prepare request data with conversation history
+            Map<String, Object> requestData = HttpUtils.prepareRequestData(config, userMessage, previousMessages);
             Map<String, String> headers = (Map<String, String>) requestData.get("headers");
             Map<String, Object> requestBody = (Map<String, Object>) requestData.get("requestBody");
 

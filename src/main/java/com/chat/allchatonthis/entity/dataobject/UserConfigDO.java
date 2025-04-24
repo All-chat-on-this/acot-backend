@@ -17,7 +17,7 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-@TableName("user_config")
+@TableName(value = "user_config", autoResultMap = true)
 public class UserConfigDO extends BaseDO {
     private Long id;
     private Boolean isAvailable; // Whether the configuration is available for use
@@ -42,8 +42,15 @@ public class UserConfigDO extends BaseDO {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private Map<String, String> headers; // Additional HTTP headers
 
+    // Request Role field names
+    private String requestUserRoleField; // Field name for role in request
+    private String requestAssistantField; // Field name for assistant in request
+    private String requestSystemField; // Field name for assistant in request
+
     // Request and Response handling strategy
-    private String requestTextPath; // JSON path for request text
+    private String requestMessageGroupPath; // JSON path for message group
+    private String requestRolePathFromGroup; // JSON path for role in message group
+    private String requestTextPathFromGroup; // JSON path for request text
     private String responseTextPath; // JSON path for response text
     private String responseThinkingTextPath; // JSON path for thinking text in response
 }

@@ -120,7 +120,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
     public ConfigTestVO testConfig(UserConfigDO config, Long userId) {
         try {
             // Use the common method to prepare request data
-            Map<String, Object> requestData = HttpUtils.prepareRequestData(config, "Hello, this is a test message.");
+            Map<String, Object> requestData = HttpUtils.prepareRequestData(config, "Hello, nice to meet you.");
             Map<String, String> headers = (Map<String, String>) requestData.get("headers");
             Map<String, Object> requestBody = (Map<String, Object>) requestData.get("requestBody");
             
@@ -136,6 +136,8 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                     requestEntity,
                     String.class
             );
+
+            log.info("API response: {}", response);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 // Parse response
