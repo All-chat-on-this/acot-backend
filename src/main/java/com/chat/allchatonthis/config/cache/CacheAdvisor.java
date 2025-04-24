@@ -33,46 +33,46 @@ public class CacheAdvisor {
     public Object aroundCacheable(ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
-        
+
         Cacheable cacheable = method.getAnnotation(Cacheable.class);
         if (cacheable == null) {
             return joinPoint.proceed(); // Not our concern
         }
-        
-        String[] cacheNames = cacheable.cacheNames().length > 0 ? 
+
+        String[] cacheNames = cacheable.cacheNames().length > 0 ?
                 cacheable.cacheNames() : cacheable.value();
-        
+
         String methodName = method.getDeclaringClass().getSimpleName() + "." + method.getName();
-        
+
         try {
             long startTime = System.currentTimeMillis();
             Object result = joinPoint.proceed();
             long duration = System.currentTimeMillis() - startTime;
-            
+
             // Log if the cache operation took longer than expected
             if (duration > 100) { // 100ms threshold
-                log.warn("Slow cache operation for method {} in cache {}: {}ms", 
+                log.warn("Slow cache operation for method {} in cache {}: {}ms",
                         methodName, String.join(",", cacheNames), duration);
             }
-            
+
             return result;
         } catch (RedisConnectionFailureException e) {
             // Redis connection failure - gracefully degrade to non-cached operation
             log.error("Redis connection failure during cache operation for method {}. " +
                     "Executing without cache. Error: {}", methodName, e.getMessage());
-            
+
             // Execute the method without caching
             return joinPoint.proceed();
         } catch (Exception e) {
             // Other caching errors - log and proceed without caching
-            log.error("Cache operation error for method {} in cache {}: {}", 
+            log.error("Cache operation error for method {} in cache {}: {}",
                     methodName, String.join(",", cacheNames), e.getMessage());
-            
+
             // Execute the method without caching
             return joinPoint.proceed();
         }
     }
-    
+
     /**
      * Advice for methods annotated with @CacheEvict to ensure cache eviction operations
      * don't disrupt application flow
@@ -90,7 +90,7 @@ public class CacheAdvisor {
             return joinPoint.proceed();
         }
     }
-    
+
     /**
      * Advice for methods annotated with @Caching to handle combined cache operations
      */

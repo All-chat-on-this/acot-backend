@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Manages cache eviction policies and provides methods for cache management
@@ -19,8 +18,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class CacheEvictionManager {
 
-    private final RedisTemplate<String, Object> redisTemplate;
-    
     // List of cache names managed by the application
     private static final List<String> CACHE_NAMES = Arrays.asList(
             "conversation",
@@ -29,7 +26,8 @@ public class CacheEvictionManager {
             "user",
             "preference"
     );
-    
+    private final RedisTemplate<String, Object> redisTemplate;
+
     /**
      * Clears all caches by cache name
      */
@@ -37,7 +35,7 @@ public class CacheEvictionManager {
         log.info("Clearing all application caches");
         CACHE_NAMES.forEach(this::clearCache);
     }
-    
+
     /**
      * Clears a specific cache by name
      *
@@ -54,7 +52,7 @@ public class CacheEvictionManager {
             log.info("No keys found to clear in cache {}", cacheName);
         }
     }
-    
+
     /**
      * Clear cache for specific user
      *
@@ -62,31 +60,20 @@ public class CacheEvictionManager {
      */
     public void clearUserCache(Long userId) {
         log.info("Clearing caches for user: {}", userId);
-        
+
         // Clear user-specific caches
         List<String> userCachePatterns = Arrays.asList(
                 "acot_user::*" + userId + "*",
                 "acot_user_config::list:" + userId,
                 "acot_preference::" + userId
         );
-        
+
         userCachePatterns.forEach(pattern -> {
             Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
+            if (!keys.isEmpty()) {
                 redisTemplate.delete(keys);
                 log.info("Cleared {} keys matching pattern {}", keys.size(), pattern);
             }
         });
-    }
-    
-    /**
-     * Scheduled task to clean expired cache entries
-     * Runs every day at 2 AM
-     */
-    @Scheduled(cron = "0 0 2 * * ?")
-    public void scheduledCacheCleanup() {
-        log.info("Running scheduled cache cleanup");
-        // Optional: implement custom cleanup logic
-        // This is typically handled by Redis TTL, but can be customized
     }
 } 
