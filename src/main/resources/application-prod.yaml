@@ -54,6 +54,14 @@ spring:
       port: 6379 # 端口
       database: 1 # 数据库索引
       password: mkyr15973 # 密码，建议生产环境开启
+      timeout: 3000 # 连接超时时间(毫秒)
+      lettuce:
+        pool:
+          max-active: 32 # 生产环境连接池最大连接数
+          max-idle: 16 # 生产环境连接池中的最大空闲连接
+          min-idle: 8 # 生产环境连接池中的最小空闲连接
+          max-wait: 2000 # 连接池最大阻塞等待时间（使用负值表示没有限制）
+          time-between-eviction-runs: 30000 # 空闲连接检测间隔时间，生产环境更频繁
 
   # Jackson 配置项
   jackson:
@@ -67,7 +75,7 @@ spring:
   cache:
     type: REDIS
     redis:
-      time-to-live: 1h # 设置过期时间为 1 小时
+      time-to-live: 1h # 默认过期时间为 1 小时
       key-prefix: acot_cache_ # 缓存key前缀
       use-key-prefix: true # 是否使用前缀
       cache-null-values: true # 是否缓存空值，可以防止缓存穿透
@@ -78,13 +86,28 @@ redisson:
     single:
       address: redis://${spring.data.redis.host}:${spring.data.redis.port}
       database: ${spring.data.redis.database}
-      connection-pool-size: 64
-      connection-minimum-idle-size: 8
-      idle-connection-timeout: 10000
-      retry-attempts: 3
-      retry-interval: 1000
-      connection-timeout: 10000
+      password: ${spring.data.redis.password}
+      # 生产环境更高的连接池容量
+      connection-pool-size: 128
+      connection-minimum-idle-size: 16
+      # 生产环境更短的超时时间
+      idle-connection-timeout: 8000
+      retry-attempts: 5
+      retry-interval: 500
+      connection-timeout: 5000
       timeout: 3000
+      # 生产环境建议开启 SSL
+      ssl-enbled: true
+      # 添加DNS监控，自动处理连接问题
+      dns-monitoring: true
+      # 添加订阅连接的最小空闲连接数
+      subscription-connection-minimum-idle-size: 8
+      # 添加订阅连接池大小
+      subscription-connection-pool-size: 32
+      # TCP NoDelay
+      tcp-no-delay: true
+      # 保持连接检查
+      ping-connection-interval: 5000
 
 --- #################### 定时任务相关配置 ####################
 

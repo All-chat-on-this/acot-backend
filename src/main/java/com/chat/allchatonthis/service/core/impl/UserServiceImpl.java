@@ -52,12 +52,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
     
     @Override
-    @Cacheable(key = "#id")
     public UserDO getById(Serializable id) {
         return super.getById(id);
     }
     
     @Override
+    @Cacheable(key = "#userId")
     public UserInfomationVO getUserInformation(Long userId) {
         // Get user from database
         UserDO user = getById(userId);
