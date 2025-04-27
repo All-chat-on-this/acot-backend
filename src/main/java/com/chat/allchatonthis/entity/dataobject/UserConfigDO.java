@@ -1,6 +1,8 @@
 package com.chat.allchatonthis.entity.dataobject;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.chat.allchatonthis.config.mybatis.core.dataobject.BaseDO;
@@ -19,6 +21,7 @@ import java.util.Map;
 @Accessors(chain = true)
 @TableName(value = "user_config", autoResultMap = true)
 public class UserConfigDO extends BaseDO {
+    @TableId(type = IdType.AUTO)
     private Long id;
     private Boolean isAvailable; // Whether the configuration is available for use
     private Long userId; // Foreign key to UserDO
