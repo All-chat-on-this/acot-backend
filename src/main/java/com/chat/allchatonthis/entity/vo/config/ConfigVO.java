@@ -8,14 +8,17 @@ import lombok.NoArgsConstructor;
 import java.util.Map;
 
 /**
- * API Configuration Create/Update Request VO
+ * API Configuration Response VO
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConfigCreateOrUpdateReqVO {
+public class ConfigVO {
     
+    private Long id;
+    private Boolean isAvailable;
+    private Long userId;
     private String name;
     private String apiUrl;
     private String apiKey;
@@ -25,4 +28,12 @@ public class ConfigCreateOrUpdateReqVO {
     private Map<String, Object> requestTemplate;
     private Map<String, Object> responseTemplate;
     private Map<String, String> headers;
+    private String requestUserRoleField;
+    private String requestAssistantField;
+    private String requestSystemField;
+    private String requestMessageGroupPath;
+    private String requestRolePathFromGroup;
+    private String requestTextPathFromGroup;
+    private String responseTextPath;
+    private String responseThinkingTextPath;
 } 

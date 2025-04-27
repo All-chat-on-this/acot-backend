@@ -56,7 +56,11 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
     @CacheEvict(key = "'list:' + #userId")
     public UserConfigDO createConfig(UserConfigDO config, Long userId) {
         config.setUserId(userId);
-        config.setIsAvailable(false); // Set default value as false until tested
+        
+        // Only set false if isAvailable is null - allows frontend to set a successful state
+        if (config.getIsAvailable() == null) {
+            config.setIsAvailable(false); // Set default value as false until tested
+        }
 
         // Ensure headers exists
         if (config.getHeaders() == null) {

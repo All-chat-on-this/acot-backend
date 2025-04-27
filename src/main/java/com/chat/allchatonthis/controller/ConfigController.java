@@ -3,11 +3,10 @@ package com.chat.allchatonthis.controller;
 import com.chat.allchatonthis.common.pojo.CommonResult;
 import com.chat.allchatonthis.common.util.object.BeanUtils;
 import com.chat.allchatonthis.common.util.security.LoginUser;
-import com.chat.allchatonthis.entity.vo.config.ConfigTestVO;
-import com.chat.allchatonthis.entity.vo.config.ConfigCreateOrUpdateReqVO;
-import com.chat.allchatonthis.entity.vo.config.ConfigRespVO;
-import com.chat.allchatonthis.entity.vo.config.ConfigTestReqVO;
 import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
+import com.chat.allchatonthis.entity.vo.config.ConfigTestReqVO;
+import com.chat.allchatonthis.entity.vo.config.ConfigTestVO;
+import com.chat.allchatonthis.entity.vo.config.ConfigVO;
 import com.chat.allchatonthis.service.core.UserConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,9 +29,9 @@ public class ConfigController {
      */
     @GetMapping("/getConfigs")
     @PreAuthorize("isAuthenticated()")
-    public CommonResult<List<ConfigRespVO>> getConfigs(@LoginUser Long userId) {
+    public CommonResult<List<ConfigVO>> getConfigs(@LoginUser Long userId) {
         List<UserConfigDO> configs = userConfigService.getConfigs(userId);
-        return CommonResult.success(BeanUtils.toBean(configs, ConfigRespVO.class));
+        return CommonResult.success(BeanUtils.toBean(configs, ConfigVO.class));
     }
 
     /**
@@ -40,9 +39,9 @@ public class ConfigController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public CommonResult<ConfigRespVO> getConfig(@PathVariable Long id, @LoginUser Long userId) {
+    public CommonResult<ConfigVO> getConfig(@PathVariable Long id, @LoginUser Long userId) {
         UserConfigDO config = userConfigService.getConfig(id, userId);
-        return CommonResult.success(BeanUtils.toBean(config, ConfigRespVO.class));
+        return CommonResult.success(BeanUtils.toBean(config, ConfigVO.class));
     }
 
     /**
@@ -50,10 +49,10 @@ public class ConfigController {
      */
     @PostMapping("/createConfig")
     @PreAuthorize("isAuthenticated()")
-    public CommonResult<ConfigRespVO> createConfig(@RequestBody ConfigCreateOrUpdateReqVO reqVO, @LoginUser Long userId) {
+    public CommonResult<ConfigVO> createConfig(@RequestBody ConfigVO reqVO, @LoginUser Long userId) {
         UserConfigDO config = BeanUtils.toBean(reqVO, UserConfigDO.class);
         config = userConfigService.createConfig(config, userId);
-        return CommonResult.success(BeanUtils.toBean(config, ConfigRespVO.class));
+        return CommonResult.success(BeanUtils.toBean(config, ConfigVO.class));
     }
 
     /**
@@ -61,11 +60,11 @@ public class ConfigController {
      */
     @PutMapping("/updateConfig/{id}")
     @PreAuthorize("isAuthenticated()")
-    public CommonResult<ConfigRespVO> updateConfig(@PathVariable Long id, @RequestBody ConfigCreateOrUpdateReqVO reqVO, 
-                                    @LoginUser Long userId) {
+    public CommonResult<ConfigVO> updateConfig(@PathVariable Long id, @RequestBody ConfigVO reqVO,
+                                               @LoginUser Long userId) {
         UserConfigDO config = BeanUtils.toBean(reqVO, UserConfigDO.class);
         config = userConfigService.updateConfig(id, config, userId);
-        return CommonResult.success(BeanUtils.toBean(config, ConfigRespVO.class));
+        return CommonResult.success(BeanUtils.toBean(config, ConfigVO.class));
     }
 
     /**

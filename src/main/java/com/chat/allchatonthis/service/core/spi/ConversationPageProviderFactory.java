@@ -1,6 +1,9 @@
 package com.chat.allchatonthis.service.core.spi;
 
+import com.chat.allchatonthis.mapper.ConversationMapper;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,16 +12,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * Factory for loading and caching ConversationPageProvider SPI implementations
  */
 @Slf4j
+@Component
 public class ConversationPageProviderFactory {
 
     private static final Map<String, List<ConversationPageProvider>> PROVIDERS_CACHE = new ConcurrentHashMap<>();
+
+    @Resource
+    private ConversationMapper conversationMapper;
 
     /**
      * Get all available providers, sorted by order (highest priority first)
      *
      * @return List of providers
      */
-    public static List<ConversationPageProvider> getProviders() {
+    public List<ConversationPageProvider> getProviders() {
         return getProviders(true);
     }
 
@@ -28,7 +35,7 @@ public class ConversationPageProviderFactory {
      * @param sort Whether to sort by order (highest priority first)
      * @return List of providers
      */
-    public static List<ConversationPageProvider> getProviders(boolean sort) {
+    public List<ConversationPageProvider> getProviders(boolean sort) {
         String cacheKey = "all_" + sort;
         
         // Check if already cached
@@ -40,7 +47,10 @@ public class ConversationPageProviderFactory {
         
         // Load using ServiceLoader for direct providers
         ServiceLoader<ConversationPageProvider> serviceLoader = ServiceLoader.load(ConversationPageProvider.class);
-        serviceLoader.forEach(providers::add);
+        serviceLoader.forEach((provider) ->{
+            provider.setConversationMapper(conversationMapper);
+            providers.add(provider);
+        });
         
         // Sort if needed
         if (sort) {

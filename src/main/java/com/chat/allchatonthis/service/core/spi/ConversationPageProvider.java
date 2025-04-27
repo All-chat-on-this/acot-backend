@@ -3,11 +3,19 @@ package com.chat.allchatonthis.service.core.spi;
 import com.chat.allchatonthis.common.pojo.PageResult;
 import com.chat.allchatonthis.entity.dataobject.ConversationDO;
 import com.chat.allchatonthis.entity.vo.conversation.ConversationPageReqVO;
+import com.chat.allchatonthis.mapper.ConversationMapper;
 
 /**
  * SPI interface for conversation page retrieval
  */
 public interface ConversationPageProvider {
+
+    /**
+     * Set the conversation mapper
+     *
+     * @param conversationMapper The conversation mapper
+     */
+    void setConversationMapper(ConversationMapper conversationMapper);
 
     /**
      * Get a page of conversations for a user

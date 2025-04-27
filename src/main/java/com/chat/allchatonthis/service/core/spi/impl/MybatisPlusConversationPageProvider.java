@@ -8,23 +8,28 @@ import com.chat.allchatonthis.entity.dataobject.ConversationDO;
 import com.chat.allchatonthis.entity.vo.conversation.ConversationPageReqVO;
 import com.chat.allchatonthis.mapper.ConversationMapper;
 import com.chat.allchatonthis.service.core.spi.ConversationPageProvider;
-import lombok.AllArgsConstructor;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.Objects;
 
 /**
  * MyBatis Plus implementation of the ConversationPageProvider SPI
  */
-@Component
-@AllArgsConstructor
 @NoArgsConstructor
 @Slf4j
 public class MybatisPlusConversationPageProvider implements ConversationPageProvider {
 
     private ConversationMapper conversationMapper;
+
+    @Override
+    public void setConversationMapper(ConversationMapper conversationMapper) {
+        this.conversationMapper = conversationMapper;
+    }
 
     @Override
     // Not using @Cacheable here because pagination requests typically vary and caching may not be effective
