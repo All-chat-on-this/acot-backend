@@ -18,6 +18,7 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -35,6 +36,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
 
     private final ConversationService conversationService;
     private final UserConfigService userConfigService;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     @Cacheable(key = "'conversation:' + #conversationId + ':user:' + #userId")
@@ -70,7 +72,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
     @Override
     @Transactional
     @Caching(evict = {
-        @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId")
+            @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId")
     })
     public ConversationMessageDO sendMessage(String userMessage, Long configId, Long conversationId, Long userId) {
         // Validate that the conversation belongs to the user
@@ -130,53 +132,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
 
     @Override
     @Transactional
-    @Caching(evict = {
-        @CacheEvict(key = "'id:' + #id + ':user:' + #userId"),
-        @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId", condition = "#result == true")
-    })
-    public boolean deleteMessage(Long id, Long userId) {
-        ConversationMessageDO message = getMessage(id, userId);
-        if (message == null) {
-            return false;
-        }
-        
-        Long conversationId = message.getConversationId();
-        return removeById(id);
-    }
-
-    @Override
-    @Transactional
-    @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId")
-    public boolean deleteMessagesByConversationId(Long conversationId, Long userId) {
-        // Validate that the conversation belongs to the user
-        ConversationDO conversation = conversationService.getConversation(conversationId, userId);
-        if (conversation == null) {
-            return false;
-        }
-
-        return remove(new LambdaQueryWrapper<ConversationMessageDO>()
-                .eq(ConversationMessageDO::getConversationId, conversationId));
-    }
-
-    @Override
-    public boolean markConfigurationAsAvailable(Long configId, Long userId) {
-        UserConfigDO config = userConfigService.getConfig(configId, userId);
-        if (config == null) {
-            return false;
-        }
-
-        // Update isAvailable to true
-        userConfigService.setAvailable(configId, true);
-
-        return true;
-    }
-
-    @Override
-    @Transactional
-    @Caching(evict = {
-        @CacheEvict(key = "'id:' + #id + ':user:' + #userId"),
-        @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId", condition = "#result != null")
-    })
+    @CacheEvict(key = "'id:' + #id + ':user:' + #userId")
     public ConversationMessageDO renameMessage(Long id, String content, Long userId) {
         // Get the message and verify ownership
         ConversationMessageDO message = getMessage(id, userId);
@@ -185,6 +141,11 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
         }
 
         Long conversationId = message.getConversationId();
+        
+        // Manually evict the conversation cache since conversationId is not available as a method parameter
+        // Instead of using: @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId")
+        String cacheKey = "acot_conversation_message::conversation:" + conversationId + ":user:" + userId;
+        redisTemplate.delete(cacheKey);
 
         // Update the message content
         message.setContent(content);
@@ -206,7 +167,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
 
             // Now generate a new response using the same logic as sendMessage
             Long configId = message.getConfigId();
-            
+
             // Validate the config exists
             UserConfigDO config = userConfigService.getConfig(configId, userId);
             if (config == null) {
@@ -250,25 +211,70 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
         // For non-user messages, just return the updated message
         return message;
     }
-    
+
+    @Override
+    @Transactional
+    @CacheEvict(key = "'id:' + #id + ':user:' + #userId")
+    public boolean deleteMessage(Long id, Long userId) {
+        ConversationMessageDO message = getMessage(id, userId);
+        if (message == null) {
+            return false;
+        }
+        
+        // Manually evict the conversation cache since conversationId is not available as a method parameter
+        // Instead of using: @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId")
+        Long conversationId = message.getConversationId();
+        String cacheKey = "acot_conversation_message::conversation:" + conversationId + ":user:" + userId;
+        redisTemplate.delete(cacheKey);
+
+        return removeById(id);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId")
+    public boolean deleteMessagesByConversationId(Long conversationId, Long userId) {
+        // Validate that the conversation belongs to the user
+        ConversationDO conversation = conversationService.getConversation(conversationId, userId);
+        if (conversation == null) {
+            return false;
+        }
+
+        return remove(new LambdaQueryWrapper<ConversationMessageDO>()
+                .eq(ConversationMessageDO::getConversationId, conversationId));
+    }
+
+    @Override
+    public boolean markConfigurationAsAvailable(Long configId, Long userId) {
+        UserConfigDO config = userConfigService.getConfig(configId, userId);
+        if (config == null) {
+            return false;
+        }
+
+        // Update isAvailable to true
+        userConfigService.setAvailable(configId, true);
+
+        return true;
+    }
+
     /**
      * Generates an assistant response based on the user message and conversation history
      *
-     * @param userMessage The message from the user
-     * @param config The API configuration to use
-     * @param conversationId The conversation ID
-     * @param configId The configuration ID
+     * @param userMessage          The message from the user
+     * @param config               The API configuration to use
+     * @param conversationId       The conversation ID
+     * @param configId             The configuration ID
      * @param conversationMessages The messages in the conversation for context
      * @return The generated assistant message
      * @throws ServiceException If the API call fails
      */
     private ConversationMessageDO generateAssistantResponse(
-            String userMessage, 
-            UserConfigDO config, 
-            Long conversationId, 
+            String userMessage,
+            UserConfigDO config,
+            Long conversationId,
             Long configId,
             List<ConversationMessageDO> conversationMessages) {
-            
+
         // Use the common method to prepare request data with conversation history
         Map<String, Object> requestData = HttpUtils.prepareRequestData(config, userMessage, conversationMessages);
         Map<String, String> headers = (Map<String, String>) requestData.get("headers");
@@ -309,7 +315,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
                 .setContent(content)
                 .setThinkingText(thinking);
         save(assistantMessageDO);
-        
+
         return assistantMessageDO;
     }
 } 
