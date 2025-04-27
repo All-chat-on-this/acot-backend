@@ -257,7 +257,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         UserConfigDO config = new UserConfigDO();
         
         // Set basic properties
-        config.setName("New Configuration3");
+        config.setName("Default Configuration");
         config.setApiUrl("https://api.siliconflow.cn/v1/chat/completions");
         config.setApiKey(""); // Empty by default, user needs to provide their own API key
         config.setApiKeyPlacement("header");
@@ -286,7 +286,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         
         Map<String, Object> message = new HashMap<>();
         message.put("role", "user");
-        message.put("content", "What opportunities and challenges will the Chinese large - model industry face in 2025?");
+        message.put("content", "Hello, nice to meet you.");
         
         requestTemplate.put("messages", List.of(message));
         requestTemplate.put("max_tokens", 512);
@@ -301,7 +301,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         
         // Set response template
         Map<String, Object> responseTemplate = new HashMap<>();
-        responseTemplate.put("id", "0196685afb2ec3f4cdf59e1c6dd30c30");
+        responseTemplate.put("id", "1234567890");
         responseTemplate.put("model", "Qwen/QwQ-32B");
         
         Map<String, Object> usage = new HashMap<>();
@@ -328,7 +328,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         
         // First tool call
         Map<String, Object> toolCall1 = new HashMap<>();
-        toolCall1.put("id", "0196685bae420c91f60bba4d49081175");
+        toolCall1.put("id", "1234567890");
         toolCall1.put("type", "function");
         
         Map<String, Object> function1 = new HashMap<>();
@@ -344,7 +344,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         
         // Second tool call
         Map<String, Object> toolCall2 = new HashMap<>();
-        toolCall2.put("id", "0196685bae429847f23572c959e56aa9");
+        toolCall2.put("id", "1234567890");
         toolCall2.put("type", "function");
         
         Map<String, Object> function2 = new HashMap<>();
@@ -360,7 +360,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         
         // Third tool call
         Map<String, Object> toolCall3 = new HashMap<>();
-        toolCall3.put("id", "0196685bae426f48b38445995961a914");
+        toolCall3.put("id", "1234567890");
         toolCall3.put("type", "function");
         
         Map<String, Object> function3 = new HashMap<>();
@@ -379,7 +379,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         choices.put("finish_reason", "tool_calls");
         
         responseTemplate.put("choices", List.of(choices));
-        responseTemplate.put("created", 1745507515);
+        responseTemplate.put("created", System.currentTimeMillis());
         responseTemplate.put("system_fingerprint", "");
         
         config.setResponseTemplate(responseTemplate);
