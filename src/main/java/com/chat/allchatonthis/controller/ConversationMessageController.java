@@ -5,6 +5,7 @@ import com.chat.allchatonthis.common.util.object.BeanUtils;
 import com.chat.allchatonthis.common.util.security.LoginUser;
 import com.chat.allchatonthis.entity.dataobject.ConversationMessageDO;
 import com.chat.allchatonthis.entity.vo.conversation.ConversationMessageCreateReqVO;
+import com.chat.allchatonthis.entity.vo.conversation.ConversationMessageRenameReqVO;
 import com.chat.allchatonthis.entity.vo.conversation.ConversationMessageRespVO;
 import com.chat.allchatonthis.entity.vo.conversation.ConversationSendMessageReqVO;
 import com.chat.allchatonthis.service.core.ConversationMessageService;
@@ -45,13 +46,12 @@ public class ConversationMessageController {
     }
 
     /**
-     * Create a new message
+     * Rename a message and generate new AI response if it's a user message
      */
-    @PostMapping("/createMessage")
+    @PostMapping("/renameMessage")
     @PreAuthorize("isAuthenticated()")
-    public CommonResult<ConversationMessageRespVO> createMessage(@RequestBody ConversationMessageCreateReqVO reqVO, @LoginUser Long userId) {
-        ConversationMessageDO message = BeanUtils.toBean(reqVO, ConversationMessageDO.class);
-        message = conversationMessageService.createMessage(message, userId);
+    public CommonResult<ConversationMessageRespVO> renameMessage(@RequestBody ConversationMessageRenameReqVO reqVO, @LoginUser Long userId) {
+        ConversationMessageDO message = conversationMessageService.renameMessage(reqVO.getId(), reqVO.getContent(), userId);
         return CommonResult.success(BeanUtils.toBean(message, ConversationMessageRespVO.class));
     }
 

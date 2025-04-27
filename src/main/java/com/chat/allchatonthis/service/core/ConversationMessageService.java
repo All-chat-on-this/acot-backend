@@ -26,13 +26,14 @@ public interface ConversationMessageService extends IService<ConversationMessage
     ConversationMessageDO getMessage(Long id, Long userId);
 
     /**
-     * Create a new message
+     * Rename a message and generate a new AI response if it's a user message
      *
-     * @param message Message to create
-     * @param userId  User ID for security check
-     * @return The created message with ID
+     * @param id       Message ID to rename
+     * @param content  New content for the message
+     * @param userId   User ID for security check
+     * @return The AI response message if a user message was renamed, or the updated message
      */
-    ConversationMessageDO createMessage(ConversationMessageDO message, Long userId);
+    ConversationMessageDO renameMessage(Long id, String content, Long userId);
 
     /**
      * Create a user message and generate an AI response
