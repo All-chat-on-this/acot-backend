@@ -110,6 +110,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
         // Create user message
         ConversationMessageDO userMessageDO = new ConversationMessageDO()
                 .setConversationId(conversationId)
+                .setConfigId(configId)
                 .setRole("user")
                 .setContent(userMessage);
         save(userMessageDO);
@@ -155,6 +156,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
             // Create assistant message with the response
             ConversationMessageDO assistantMessageDO = new ConversationMessageDO()
                     .setConversationId(conversationId)
+                    .setConfigId(configId)
                     .setRole("assistant")
                     .setContent(content)
                     .setThinkingText(thinking);

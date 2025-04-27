@@ -14,6 +14,11 @@ public class ConversationMessageCreateReqVO {
     private Long conversationId;
 
     /**
+     * Config ID
+     */
+    private Long configId;
+
+    /**
      * Message role (system, assistant, user)
      */
     private String role;

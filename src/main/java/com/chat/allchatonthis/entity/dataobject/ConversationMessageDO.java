@@ -19,7 +19,8 @@ import lombok.experimental.Accessors;
 public class ConversationMessageDO extends BaseDO {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private Long conversationId; // Foreign key to ConversationDO
+    private Long conversationId;
+    private Long configId;
     private String role;
     private String content;
     private String thinkingText;
