@@ -7,6 +7,7 @@ import com.chat.allchatonthis.entity.dataobject.UserDO;
 import com.chat.allchatonthis.entity.vo.user.UserInfomationVO;
 import com.chat.allchatonthis.enums.SocialTypeEnum;
 import com.chat.allchatonthis.service.auth.AuthService;
+import com.chat.allchatonthis.service.core.UserConfigService;
 import com.chat.allchatonthis.service.core.UserService;
 import com.chat.allchatonthis.service.social.SocialClientService;
 import com.xingyuv.jushauth.model.AuthUser;
@@ -39,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserService userService;
     private final SocialClientService socialClientService;
     private final PasswordEncoder passwordEncoder;
+    private final UserConfigService userConfigService;
 
     @Value("${jwt.expiration:86400000}")
     private long expiration;
@@ -104,6 +106,9 @@ public class AuthServiceImpl implements AuthService {
         // Save user
         userService.save(user);
 
+        // Create default configuration for the user
+        userConfigService.createDefaultConfig(user.getId());
+
         // Generate JWT token
         String jwt = jwtUtils.generateToken(user.getUsername(), user.getId(), user.getLoginType());
 
@@ -138,6 +143,9 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) {
             isNewUser = true;
             user = createSocialUser(authUser, socialType);
+            
+            // Create default configuration for new social users
+            userConfigService.createDefaultConfig(user.getId());
         }
 
         // Generate JWT token

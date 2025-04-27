@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -248,5 +249,159 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
     private void evictConfigCache(Long configId, Long userId) {
         // This is a manual cache eviction, spring will handle the actual eviction
         log.debug("Manually evicting cache for config id: {} and user id: {}", configId, userId);
+    }
+    
+    @Override
+    @CacheEvict(key = "'list:' + #userId")
+    public UserConfigDO createDefaultConfig(Long userId) {
+        UserConfigDO config = new UserConfigDO();
+        
+        // Set basic properties
+        config.setName("New Configuration3");
+        config.setApiUrl("https://api.siliconflow.cn/v1/chat/completions");
+        config.setApiKey(""); // Empty by default, user needs to provide their own API key
+        config.setApiKeyPlacement("header");
+        config.setIsAvailable(false); // Set to false until tested with a valid API key
+        
+        // Set request template
+        Map<String, Object> requestTemplate = new HashMap<>();
+        requestTemplate.put("n", 1);
+        requestTemplate.put("stop", null);
+        requestTemplate.put("model", "Qwen/QwQ-32B");
+        
+        Map<String, Object> function = new HashMap<>();
+        function.put("name", "");
+        function.put("strict", false);
+        function.put("parameters", new HashMap<>());
+        function.put("description", "");
+        
+        Map<String, Object> tool = new HashMap<>();
+        tool.put("type", "function");
+        tool.put("function", function);
+        
+        requestTemplate.put("tools", List.of(tool));
+        requestTemplate.put("top_k", 50);
+        requestTemplate.put("top_p", 0.7);
+        requestTemplate.put("stream", false);
+        
+        Map<String, Object> message = new HashMap<>();
+        message.put("role", "user");
+        message.put("content", "What opportunities and challenges will the Chinese large - model industry face in 2025?");
+        
+        requestTemplate.put("messages", List.of(message));
+        requestTemplate.put("max_tokens", 512);
+        requestTemplate.put("temperature", 0.7);
+        
+        Map<String, Object> responseFormat = new HashMap<>();
+        responseFormat.put("type", "text");
+        requestTemplate.put("response_format", responseFormat);
+        requestTemplate.put("frequency_penalty", 0.5);
+        
+        config.setRequestTemplate(requestTemplate);
+        
+        // Set response template
+        Map<String, Object> responseTemplate = new HashMap<>();
+        responseTemplate.put("id", "0196685afb2ec3f4cdf59e1c6dd30c30");
+        responseTemplate.put("model", "Qwen/QwQ-32B");
+        
+        Map<String, Object> usage = new HashMap<>();
+        usage.put("total_tokens", 915);
+        usage.put("prompt_tokens", 141);
+        usage.put("completion_tokens", 774);
+        
+        Map<String, Object> completionTokensDetails = new HashMap<>();
+        completionTokensDetails.put("reasoning_tokens", 681);
+        usage.put("completion_tokens_details", completionTokensDetails);
+        
+        responseTemplate.put("usage", usage);
+        responseTemplate.put("object", "chat.completion");
+        
+        Map<String, Object> choices = new HashMap<>();
+        choices.put("index", 0);
+        
+        Map<String, Object> choiceMessage = new HashMap<>();
+        choiceMessage.put("role", "assistant");
+        choiceMessage.put("content", "");
+        choiceMessage.put("reasoning_content", "Hello, how can I help you?");
+        
+        List<Map<String, Object>> toolCalls = new ArrayList<>();
+        
+        // First tool call
+        Map<String, Object> toolCall1 = new HashMap<>();
+        toolCall1.put("id", "0196685bae420c91f60bba4d49081175");
+        toolCall1.put("type", "function");
+        
+        Map<String, Object> function1 = new HashMap<>();
+        function1.put("name", "get_market_growth");
+        
+        Map<String, Object> arguments1 = new HashMap<>();
+        arguments1.put("year", 2025);
+        arguments1.put("country", "China");
+        
+        function1.put("arguments", arguments1);
+        toolCall1.put("function", function1);
+        toolCalls.add(toolCall1);
+        
+        // Second tool call
+        Map<String, Object> toolCall2 = new HashMap<>();
+        toolCall2.put("id", "0196685bae429847f23572c959e56aa9");
+        toolCall2.put("type", "function");
+        
+        Map<String, Object> function2 = new HashMap<>();
+        function2.put("name", "get_policy_updates");
+        
+        Map<String, Object> arguments2 = new HashMap<>();
+        arguments2.put("year", 2025);
+        arguments2.put("country", "China");
+        
+        function2.put("arguments", arguments2);
+        toolCall2.put("function", function2);
+        toolCalls.add(toolCall2);
+        
+        // Third tool call
+        Map<String, Object> toolCall3 = new HashMap<>();
+        toolCall3.put("id", "0196685bae426f48b38445995961a914");
+        toolCall3.put("type", "function");
+        
+        Map<String, Object> function3 = new HashMap<>();
+        function3.put("name", "get_technical_challenges");
+        
+        Map<String, Object> arguments3 = new HashMap<>();
+        arguments3.put("year", 2025);
+        arguments3.put("country", "China");
+        
+        function3.put("arguments", arguments3);
+        toolCall3.put("function", function3);
+        toolCalls.add(toolCall3);
+        
+        choiceMessage.put("tool_calls", toolCalls);
+        choices.put("message", choiceMessage);
+        choices.put("finish_reason", "tool_calls");
+        
+        responseTemplate.put("choices", List.of(choices));
+        responseTemplate.put("created", 1745507515);
+        responseTemplate.put("system_fingerprint", "");
+        
+        config.setResponseTemplate(responseTemplate);
+        
+        // Set headers
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/json");
+        config.setHeaders(headers);
+        
+        // Set message paths
+        config.setRequestMessageGroupPath("messages");
+        config.setRequestRolePathFromGroup("role");
+        config.setRequestTextPathFromGroup("content");
+        config.setResponseTextPath("choices[0].message.content");
+        config.setResponseThinkingTextPath("choices[0].message.reasoning_content");
+        
+        // Set role fields
+        config.setRequestUserRoleField("user");
+        config.setRequestAssistantField("assistant");
+        config.setRequestSystemField("system");
+        
+        // Save the configuration
+        return createConfig(config, userId);
     }
 } 

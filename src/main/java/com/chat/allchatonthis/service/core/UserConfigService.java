@@ -65,6 +65,14 @@ public interface UserConfigService extends IService<UserConfigDO> {
     ConfigTestVO testConfig(UserConfigDO config, Long userId);
 
     /**
+     * Create a default configuration for a newly registered user
+     * 
+     * @param userId User ID who just registered
+     * @return The created default configuration
+     */
+    UserConfigDO createDefaultConfig(Long userId);
+
+    /**
      * Set the availability of a conversation
      * @param configId The conversation ID to set the availability for
      * @param available The availability to set
