@@ -15,7 +15,8 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConfigTestReqVO {
-    
+
+    private Long id;
     private String name;
     private String apiUrl;
     private String apiKey;

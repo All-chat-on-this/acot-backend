@@ -87,15 +87,14 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
             throw new ServiceException(CONFIGURATION_NOT_EXISTS.getCode(), CONFIGURATION_NOT_EXISTS.getMsg());
         }
 
-        // Create user message
-        ConversationMessageDO userMessageDO = new ConversationMessageDO()
-                .setConversationId(conversationId)
-                .setConfigId(configId)
-                .setRole("user")
-                .setContent(userMessage);
-        save(userMessageDO);
-
         try {
+            // Create user message (but don't save it yet)
+            ConversationMessageDO userMessageDO = new ConversationMessageDO()
+                    .setConversationId(conversationId)
+                    .setConfigId(configId)
+                    .setRole("user")
+                    .setContent(userMessage);
+
             // Get previous messages in the conversation for history
             List<ConversationMessageDO> previousMessages = list(new LambdaQueryWrapper<ConversationMessageDO>()
                     .eq(ConversationMessageDO::getConversationId, conversationId)
@@ -103,6 +102,9 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
 
             // Generate the assistant response
             ConversationMessageDO assistantMessageDO = generateAssistantResponse(userMessage, config, conversationId, configId, previousMessages);
+
+            // If we get here, the API call was successful, so now save the user message
+            save(userMessageDO);
 
             // Update the conversation's update time
             conversation.setUpdateTime(assistantMessageDO.getUpdateTime());
@@ -115,12 +117,8 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
         } catch (Exception e) {
             log.error("Error sending message", e);
 
-            // Create an error message
-            ConversationMessageDO errorMessageDO = new ConversationMessageDO()
-                    .setConversationId(conversationId)
-                    .setRole("system")
-                    .setContent("Error: " + e.getMessage());
-            save(errorMessageDO);
+            // We don't create an error message in the database anymore
+            // Just propagate the exception with the error message
 
             if (e instanceof ServiceException) {
                 throw e;
