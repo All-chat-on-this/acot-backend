@@ -27,25 +27,6 @@ spring:
     url: jdbc:mysql://117.72.111.131:3306/acot-prod?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
     username: root
     password: mkyr15973
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    druid: # Druid 【监控】相关的全局配置
-      web-stat-filter:
-        enabled: true
-      stat-view-servlet:
-        enabled: true
-        allow: # 设置白名单，不填则允许所有访问
-        url-pattern: /druid/*
-        login-username: # 控制台管理用户名和密码
-        login-password:
-      filter:
-        stat:
-          enabled: true
-          log-slow-sql: true # 慢 SQL 记录
-          slow-sql-millis: 100
-          merge-sql: true
-        wall:
-          config:
-            multi-statement-allow: true
 
   # Redis 配置 - 环境特定
   data:

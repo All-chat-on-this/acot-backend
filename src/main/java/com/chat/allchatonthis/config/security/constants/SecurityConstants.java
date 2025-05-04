@@ -13,6 +13,7 @@ public class SecurityConstants {
     public static final List<String> PUBLIC_PATH_PATTERNS = Arrays.asList(
             "/api/auth/**",
             "/api/social/**",
-            "/api/public/**"
+            "/api/public/**",
+            "/druid/**"
     );
 } 
