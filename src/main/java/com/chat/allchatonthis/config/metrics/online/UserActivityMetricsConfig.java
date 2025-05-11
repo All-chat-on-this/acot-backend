@@ -1,4 +1,6 @@
-package com.chat.allchatonthis.config.metrics.online;
+package com.chat.allchatonthis.config.metrics.online;  // Package declaration for online user metrics configuration
+
+// Dependency: Metrics service to update online user count
 
 import com.chat.allchatonthis.config.metrics.endpoint.EndpointMetrics;
 import lombok.RequiredArgsConstructor;
@@ -13,77 +15,96 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
 /**
- * Centralized configuration for user activity metrics tracking
+ * Centralized configuration for tracking user login/logout activity metrics.
  * <p>
- * This class consolidates all user activity tracking logic in one place
- * to avoid redundant metrics collection by multiple components.
- * <p>
- * It manages:
- * 1. Spring Security authentication events through event listeners
- * 2. HTTP session lifecycle management through SessionEventListener
- * 3. Form-based login/logout through custom handlers (if needed)
- * <p>
- * This replaces the previous redundant implementations in:
- * - CustomAuthenticationHandler
- * - UserActivityListener
- * - AuthServiceImpl metrics tracking
+ * Core responsibilities:
+ * - Listen to Spring Security authentication events (login/logout)
+ * - Avoid redundant metrics collection by consolidating tracking logic
+ * - Provide custom handlers for form-based login/logout (without duplicate metrics)
  */
-@Configuration
-@RequiredArgsConstructor
-@Slf4j
+@Configuration  // Marks this class as a Spring configuration class
+@RequiredArgsConstructor  // Lombok: Generates constructor with 'endpointMetrics' parameter
+@Slf4j  // Lombok: Generates 'log' field for logging
 public class UserActivityMetricsConfig {
 
+    // Dependency injection: Metrics service to update online user count
     private final EndpointMetrics endpointMetrics;
 
     /**
-     * Primary method for tracking successful authentication
+     * Event listener for successful user authentication (login).
+     * <p>
+     * Triggered by Spring Security when a user successfully authenticates.
+     *
+     * @param event The authentication success event containing user details
      */
-    @EventListener
+    @EventListener  // Listens to ApplicationEvent of type AuthenticationSuccessEvent
     public void handleAuthenticationSuccess(AuthenticationSuccessEvent event) {
+        // Extract authentication object from the event
         Authentication authentication = event.getAuthentication();
+        // Get the username from the authentication object
         String username = authentication.getName();
+        // Log the login event for auditing
         log.debug("User logged in: {}", username);
+        // Increment online user count via metrics service
         endpointMetrics.userLoggedIn();
     }
 
     /**
-     * Primary method for tracking logout
+     * Event listener for successful user logout.
+     * <p>
+     * Triggered by Spring Security when a user successfully logs out.
+     *
+     * @param event The logout success event (may contain user details)
      */
-    @EventListener
+    @EventListener  // Listens to ApplicationEvent of type LogoutSuccessEvent
     public void handleLogout(LogoutSuccessEvent event) {
+        // Extract authentication object from the event (may be null in some cases)
         Authentication authentication = event.getAuthentication();
         if (authentication != null) {
+            // Get the username from the authentication object
             String username = authentication.getName();
+            // Log the logout event for auditing
             log.debug("User logged out: {}", username);
         }
+        // Decrement online user count via metrics service
         endpointMetrics.userLoggedOut();
     }
 
     /**
-     * Creates an authentication success handler that doesn't double-count metrics
-     * but still provides the logging functionality
+     * Custom authentication success handler for form-based logins.
+     * <p>
+     * Purpose: Provide logging without duplicating metrics (already handled by event listener).
+     *
+     * @return A custom AuthenticationSuccessHandler instance
      */
-    @Bean
+    @Bean  // Registers this as a Spring bean
     public AuthenticationSuccessHandler loggingAuthenticationSuccessHandler() {
-        return (request, response, authentication) -> {
+        return (request, response, authentication) -> {  // Lambda implementation of the handler
+            // Get the username from the authentication object
             String username = authentication.getName();
+            // Log the form-based login for debugging
             log.debug("User authenticated via form login: {}", username);
-            // No metrics tracking here - already handled by the event listener
+            // No metrics tracking here (already handled by handleAuthenticationSuccess)
         };
     }
 
     /**
-     * Creates a logout success handler that doesn't double-count metrics
-     * but still provides the logging functionality
+     * Custom logout success handler for form-based logouts.
+     * <p>
+     * Purpose: Provide logging without duplicating metrics (already handled by event listener).
+     *
+     * @return A custom LogoutSuccessHandler instance
      */
-    @Bean
+    @Bean  // Registers this as a Spring bean
     public LogoutSuccessHandler loggingLogoutSuccessHandler() {
-        return (request, response, authentication) -> {
+        return (request, response, authentication) -> {  // Lambda implementation of the handler
             if (authentication != null) {
+                // Get the username from the authentication object
                 String username = authentication.getName();
+                // Log the form-based logout for debugging
                 log.debug("User logged out via form logout: {}", username);
             }
-            // No metrics tracking here - already handled by the event listener
+            // No metrics tracking here (already handled by handleLogout)
         };
     }
-} 
+}
