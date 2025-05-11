@@ -1,4 +1,4 @@
-package com.chat.allchatonthis.controller;
+package com.chat.allchatonthis.controller.common;
 
 import com.chat.allchatonthis.common.util.object.BeanUtils;
 import com.chat.allchatonthis.common.util.security.SecurityUtils;

@@ -1,10 +1,9 @@
-package com.chat.allchatonthis.controller;
+package com.chat.allchatonthis.controller.common;
 
 import com.chat.allchatonthis.common.pojo.CommonResult;
 import com.chat.allchatonthis.common.util.object.BeanUtils;
 import com.chat.allchatonthis.common.util.security.LoginUser;
 import com.chat.allchatonthis.entity.dataobject.ConversationMessageDO;
-import com.chat.allchatonthis.entity.vo.conversation.ConversationMessageCreateReqVO;
 import com.chat.allchatonthis.entity.vo.conversation.ConversationMessageRenameReqVO;
 import com.chat.allchatonthis.entity.vo.conversation.ConversationMessageRespVO;
 import com.chat.allchatonthis.entity.vo.conversation.ConversationSendMessageReqVO;

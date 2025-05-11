@@ -1,7 +1,6 @@
-package com.chat.allchatonthis.controller;
+package com.chat.allchatonthis.controller.common;
 
 import com.chat.allchatonthis.common.pojo.CommonResult;
-import com.chat.allchatonthis.common.util.security.LoginUser;
 import com.chat.allchatonthis.entity.vo.user.UserInfomationVO;
 import com.chat.allchatonthis.service.auth.AuthService;
 import com.chat.allchatonthis.service.social.SocialClientService;

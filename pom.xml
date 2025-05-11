@@ -131,6 +131,18 @@
             <version>2.0.5</version>
         </dependency>
 
+        <!-- Actuator 提供健康检查、指标等 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Micrometer Prometheus 注册中心 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
         <!-- Job 定时任务相关 -->
         <!--        <dependency>-->
         <!--            <groupId>org.springframework.boot</groupId>-->

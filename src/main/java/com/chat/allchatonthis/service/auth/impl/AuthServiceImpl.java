@@ -143,7 +143,7 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) {
             isNewUser = true;
             user = createSocialUser(authUser, socialType);
-            
+
             // Create default configuration for new social users
             userConfigService.createDefaultConfig(user.getId());
         }
@@ -211,17 +211,17 @@ public class AuthServiceImpl implements AuthService {
             // If token is already invalid, consider logout successful
             return true;
         }
-        
+
         try {
             // Get username from token
             String username = jwtUtils.extractUsername(token);
-            
+
             // Clear SecurityContext if this user is currently logged in
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication != null && authentication.getName().equals(username)) {
                 SecurityContextHolder.clearContext();
             }
-            
+
             return true;
         } catch (Exception e) {
             log.error("Error during logout: {}", e.getMessage(), e);

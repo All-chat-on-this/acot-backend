@@ -77,6 +77,10 @@ server:
       enabled: true
       charset: UTF-8 # 必须设置 UTF-8，避免 WebFlux 流式返回（AI 场景）会乱码问题
       force: true
+    session:
+      timeout: 30m # Set session timeout to 30 minutes
+  # Session timeout
+
 
 # 日志文件配置
 logging:
@@ -85,6 +89,7 @@ logging:
   level:
     com.chat.allchatonthis.controller: debug # Enable controller request logging with INFO level by default
     org.springframework.web.filter.CommonsRequestLoggingFilter: debug # Enable request logging filter
+    com.chat.allchatonthis.common.metrics: debug # Enable metrics logging
 
 # JWT Configuration
 jwt:
@@ -143,6 +148,40 @@ justauth:
       client-id: ${WX_CLIENT_ID:your_client_id}
       client-secret: ${WX_CLIENT_SECRET:your_client_secret}
       redirect-uri: ${WX_REDIRECT_URI:http://localhost:8080/api/auth/social/callback?type=32}
+
+# Management endpoints configuration for Actuator and Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics,prometheus,env,threaddump,loggers" # Expose specific endpoints
+      base-path: /actuator # Base path for actuator endpoints
+      cors:
+        allowed-origins: "*"
+        allowed-methods: GET,POST,PUT,DELETE,OPTIONS,HEAD # Allow all methods
+        allowed-headers: "*"
+  endpoint:
+    health:
+      show-details: when_authorized # Only show detailed health information to authenticated users
+    metrics:
+      access: unrestricted
+    prometheus:
+      access: unrestricted
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true # Enable histogram metrics for HTTP requests
+    tags:
+      application: ${spring.application.name}  # Add application name tag to all metrics
+  health:
+    diskspace:
+      enabled: true # Monitor disk space usage
+    db:
+      enabled: true # Monitor database status
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 debug: false
 

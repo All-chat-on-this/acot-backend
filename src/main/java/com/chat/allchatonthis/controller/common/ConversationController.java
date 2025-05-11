@@ -1,7 +1,6 @@
-package com.chat.allchatonthis.controller;
+package com.chat.allchatonthis.controller.common;
 
 import com.chat.allchatonthis.common.pojo.CommonResult;
-import com.chat.allchatonthis.common.pojo.PageParam;
 import com.chat.allchatonthis.common.pojo.PageResult;
 import com.chat.allchatonthis.common.util.object.BeanUtils;
 import com.chat.allchatonthis.common.util.security.LoginUser;

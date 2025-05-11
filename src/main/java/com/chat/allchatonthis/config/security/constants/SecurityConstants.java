@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Security related constants 
+ * Security related constants
  */
 public class SecurityConstants {
     /**
@@ -14,6 +14,7 @@ public class SecurityConstants {
             "/api/auth/**",
             "/api/social/**",
             "/api/public/**",
-            "/druid/**"
+            "/druid/**",
+            "/actuator/**"
     );
 } 
