@@ -84,7 +84,7 @@ public class ConfigController {
     @PreAuthorize("isAuthenticated()")
     public CommonResult<ConfigTestVO> testConfig(@RequestBody ConfigTestReqVO reqVO, @LoginUser Long userId) {
         UserConfigDO config = BeanUtils.toBean(reqVO, UserConfigDO.class);
-        ConfigTestVO result = userConfigService.testConfig(config, userId);
+        ConfigTestVO result = userConfigService.testConfig(config, userId, reqVO.getSecretKey());
         return CommonResult.success(result);
     }
 }

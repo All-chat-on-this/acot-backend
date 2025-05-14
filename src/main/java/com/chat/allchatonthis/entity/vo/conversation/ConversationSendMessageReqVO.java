@@ -22,4 +22,9 @@ public class ConversationSendMessageReqVO {
      * Message content
      */
     private String message;
+
+    /**
+     * Secret key for decrypting the api key
+     */
+    private String secretKey;
 } 

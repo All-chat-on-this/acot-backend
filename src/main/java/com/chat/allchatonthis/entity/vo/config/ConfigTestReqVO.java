@@ -34,4 +34,5 @@ public class ConfigTestReqVO {
     private String requestTextPathFromGroup;
     private String responseTextPath;
     private String responseThinkingTextPath;
+    private String secretKey;
 } 

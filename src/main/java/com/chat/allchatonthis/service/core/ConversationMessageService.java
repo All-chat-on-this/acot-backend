@@ -26,15 +26,16 @@ public interface ConversationMessageService extends IService<ConversationMessage
     ConversationMessageDO getMessage(Long id, Long userId);
 
     /**
-     * Create a user message and generate an AI response
+     * Send a message and generate a response
      *
-     * @param userMessage    User's message
-     * @param configId       ID of the configuration to use
-     * @param conversationId Conversation ID
-     * @param userId         User ID
-     * @return The AI response message
+     * @param userMessage    The user message
+     * @param configId       The configuration ID
+     * @param conversationId The conversation ID
+     * @param userId         The user ID
+     * @param secretKey      The secret key for API key decryption (optional)
+     * @return The assistant message response
      */
-    ConversationMessageDO sendMessage(String userMessage, Long configId, Long conversationId, Long userId);
+    ConversationMessageDO sendMessage(String userMessage, Long configId, Long conversationId, Long userId, String secretKey);
 
     /**
      * Rename a message and generate a new AI response if it's a user message

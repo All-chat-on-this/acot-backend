@@ -74,7 +74,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
     @Caching(evict = {
             @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId")
     })
-    public ConversationMessageDO sendMessage(String userMessage, Long configId, Long conversationId, Long userId) {
+    public ConversationMessageDO sendMessage(String userMessage, Long configId, Long conversationId, Long userId, String secretKey) {
         // Validate that the conversation belongs to the user
         ConversationDO conversation = conversationService.getConversation(conversationId, userId);
         if (conversation == null) {
@@ -88,6 +88,11 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
         }
 
         try {
+            // Set the secretKey for decryption if provided
+            if (StringUtils.hasText(secretKey)) {
+                config.setSecretKey(secretKey);
+            }
+
             // Create user message (but don't save it yet)
             ConversationMessageDO userMessageDO = new ConversationMessageDO()
                     .setConversationId(conversationId)
@@ -139,7 +144,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
         }
 
         Long conversationId = message.getConversationId();
-        
+
         // Manually evict the conversation cache since conversationId is not available as a method parameter
         // Instead of using: @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId")
         String cacheKey = "acot_conversation_message::conversation:" + conversationId + ":user:" + userId;
@@ -218,7 +223,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
         if (message == null) {
             return false;
         }
-        
+
         // Manually evict the conversation cache since conversationId is not available as a method parameter
         // Instead of using: @CacheEvict(key = "'conversation:' + #conversationId + ':user:' + #userId")
         Long conversationId = message.getConversationId();
@@ -249,8 +254,8 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
             return false;
         }
 
-        // Update isAvailable to true
-        userConfigService.setAvailable(configId, true);
+        // Update isAvailable to true and set lastUsedTime to now
+        userConfigService.setAvailableAndUpdateLastUsedTime(configId, true);
 
         return true;
     }

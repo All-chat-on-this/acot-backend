@@ -60,7 +60,7 @@ public class ConversationMessageController {
     @PostMapping("/sendMessage")
     @PreAuthorize("isAuthenticated()")
     public CommonResult<ConversationMessageRespVO> sendMessage(@RequestBody ConversationSendMessageReqVO reqVO, @LoginUser Long userId) {
-        ConversationMessageDO responseMessage = conversationMessageService.sendMessage(reqVO.getMessage(), reqVO.getConfigId(), reqVO.getConversationId(), userId);
+        ConversationMessageDO responseMessage = conversationMessageService.sendMessage(reqVO.getMessage(), reqVO.getConfigId(), reqVO.getConversationId(), userId, reqVO.getSecretKey());
         return CommonResult.success(BeanUtils.toBean(responseMessage, ConversationMessageRespVO.class));
     }
 

@@ -7,24 +7,32 @@ import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
+import com.chat.allchatonthis.common.exception.ServiceException;
 import com.chat.allchatonthis.common.util.json.JsonUtils;
 import com.chat.allchatonthis.entity.dataobject.ConversationMessageDO;
 import com.chat.allchatonthis.entity.dataobject.UserConfigDO;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.chat.allchatonthis.common.enums.ErrorCodeConstants.CONFIG_NOT_EXISTS;
+
 /**
  * HTTP 工具类
  */
+@Slf4j
 public class HttpUtils {
 
     @SuppressWarnings("unchecked")
@@ -171,11 +179,22 @@ public class HttpUtils {
         // Prepare headers
         Map<String, String> headers = new HashMap<>(config.getHeaders() != null ? config.getHeaders() : new HashMap<>());
 
+        // Check if API key is encrypted and decrypt if needed
+        String apiKey = config.getApiKey();
+        if (apiKey != null && apiKey.startsWith("enc:") && StringUtils.hasText(config.getSecretKey())) {
+            try {
+                apiKey = decryptApiKey(apiKey.substring(4), config.getSecretKey());
+            } catch (Exception e) {
+                log.error("Error decrypting API key", e);
+                throw new ServiceException(CONFIG_NOT_EXISTS, "Failed to decrypt API key: " + e.getMessage());
+            }
+        }
+
         // Add API key to headers based on placement
         if ("header".equals(config.getApiKeyPlacement()) || config.getApiKeyPlacement() == null) {
-            headers.put("Authorization", "Bearer " + config.getApiKey());
+            headers.put("Authorization", "Bearer " + apiKey);
         } else if ("custom_header".equals(config.getApiKeyPlacement()) && config.getApiKeyHeader() != null) {
-            headers.put(config.getApiKeyHeader(), config.getApiKey());
+            headers.put(config.getApiKeyHeader(), apiKey);
         }
 
         // Ensure Content-Type header exists
@@ -188,28 +207,28 @@ public class HttpUtils {
 
         // Add API key to body if needed
         if ("body".equals(config.getApiKeyPlacement()) && config.getApiKeyBodyPath() != null) {
-            JsonUtils.setValueByPath(requestBody, config.getApiKeyBodyPath(), config.getApiKey());
+            JsonUtils.setValueByPath(requestBody, config.getApiKeyBodyPath(), apiKey);
         }
 
         // Add the message text to the request body at the specified path if provided
         if (StringUtils.hasText(messageText) && StringUtils.hasText(config.getRequestMessageGroupPath())) {
             // Create a message object with the role and content
             Map<String, Object> messageObj = new HashMap<>();
-            String rolePath = StringUtils.hasText(config.getRequestRolePathFromGroup()) ? 
-                              config.getRequestRolePathFromGroup() : "role";
-                              
-            String textPath = StringUtils.hasText(config.getRequestTextPathFromGroup()) ? 
-                             config.getRequestTextPathFromGroup() : "content";
-                             
-            String roleValue = StringUtils.hasText(config.getRequestUserRoleField()) ? 
-                              config.getRequestUserRoleField() : "user";
-                              
+            String rolePath = StringUtils.hasText(config.getRequestRolePathFromGroup()) ?
+                    config.getRequestRolePathFromGroup() : "role";
+
+            String textPath = StringUtils.hasText(config.getRequestTextPathFromGroup()) ?
+                    config.getRequestTextPathFromGroup() : "content";
+
+            String roleValue = StringUtils.hasText(config.getRequestUserRoleField()) ?
+                    config.getRequestUserRoleField() : "user";
+
             messageObj.put(rolePath, roleValue);
             messageObj.put(textPath, messageText);
-            
+
             // Set the message in the message group
             JsonUtils.setValueByPath(requestBody, config.getRequestMessageGroupPath(), new ArrayList<Map<String, Object>>());
-            
+
             // Add the message to the message group
             List<Map<String, Object>> messages = new ArrayList<>();
             messages.add(messageObj);
@@ -222,13 +241,13 @@ public class HttpUtils {
 
         return result;
     }
-    
+
     /**
      * Prepares the request data (headers and body) for API calls based on configuration
      * This version supports message group functionality with conversation history
      *
-     * @param config           The user configuration containing API settings
-     * @param messageText      The message text to include in the request
+     * @param config               The user configuration containing API settings
+     * @param messageText          The message text to include in the request
      * @param conversationMessages Previous messages in the conversation
      * @return Map containing headers and requestBody
      */
@@ -236,11 +255,22 @@ public class HttpUtils {
         // Prepare headers
         Map<String, String> headers = new HashMap<>(config.getHeaders() != null ? config.getHeaders() : new HashMap<>());
 
+        // Check if API key is encrypted and decrypt if needed
+        String apiKey = config.getApiKey();
+        if (apiKey != null && apiKey.startsWith("enc:") && StringUtils.hasText(config.getSecretKey())) {
+            try {
+                apiKey = decryptApiKey(apiKey.substring(4), config.getSecretKey());
+            } catch (Exception e) {
+                log.error("Error decrypting API key", e);
+                throw new ServiceException(CONFIG_NOT_EXISTS, "Failed to decrypt API key: " + e.getMessage());
+            }
+        }
+
         // Add API key to headers based on placement
         if ("header".equals(config.getApiKeyPlacement()) || config.getApiKeyPlacement() == null) {
-            headers.put("Authorization", "Bearer " + config.getApiKey());
+            headers.put("Authorization", "Bearer " + apiKey);
         } else if ("custom_header".equals(config.getApiKeyPlacement()) && config.getApiKeyHeader() != null) {
-            headers.put(config.getApiKeyHeader(), config.getApiKey());
+            headers.put(config.getApiKeyHeader(), apiKey);
         }
 
         // Ensure Content-Type header exists
@@ -253,26 +283,26 @@ public class HttpUtils {
 
         // Add API key to body if needed
         if ("body".equals(config.getApiKeyPlacement()) && config.getApiKeyBodyPath() != null) {
-            JsonUtils.setValueByPath(requestBody, config.getApiKeyBodyPath(), config.getApiKey());
+            JsonUtils.setValueByPath(requestBody, config.getApiKeyBodyPath(), apiKey);
         }
 
         // Extract field names and default values
-        String rolePath = StringUtils.hasText(config.getRequestRolePathFromGroup()) ? 
-                          config.getRequestRolePathFromGroup() : "role";
-                          
-        String textPath = StringUtils.hasText(config.getRequestTextPathFromGroup()) ? 
-                         config.getRequestTextPathFromGroup() : "content";
-                         
-        String userRoleValue = StringUtils.hasText(config.getRequestUserRoleField()) ? 
-                              config.getRequestUserRoleField() : "user";
-                              
-        String assistantRoleValue = StringUtils.hasText(config.getRequestAssistantField()) ? 
-                                   config.getRequestAssistantField() : "assistant";
+        String rolePath = StringUtils.hasText(config.getRequestRolePathFromGroup()) ?
+                config.getRequestRolePathFromGroup() : "role";
+
+        String textPath = StringUtils.hasText(config.getRequestTextPathFromGroup()) ?
+                config.getRequestTextPathFromGroup() : "content";
+
+        String userRoleValue = StringUtils.hasText(config.getRequestUserRoleField()) ?
+                config.getRequestUserRoleField() : "user";
+
+        String assistantRoleValue = StringUtils.hasText(config.getRequestAssistantField()) ?
+                config.getRequestAssistantField() : "assistant";
 
         // Create the message group and add conversation history
         if (StringUtils.hasText(config.getRequestMessageGroupPath()) && (conversationMessages != null || messageText != null)) {
             List<Map<String, Object>> messages = new ArrayList<>();
-            
+
             // Add previous messages
             if (conversationMessages != null) {
                 for (ConversationMessageDO message : conversationMessages) {
@@ -280,7 +310,7 @@ public class HttpUtils {
                     if ("system".equals(message.getRole())) {
                         continue;
                     }
-                    
+
                     Map<String, Object> messageObj = new HashMap<>();
                     // Map the role values appropriately
                     if ("user".equals(message.getRole())) {
@@ -291,12 +321,12 @@ public class HttpUtils {
                         // Use the role as is for any other roles
                         messageObj.put(rolePath, message.getRole());
                     }
-                    
+
                     messageObj.put(textPath, message.getContent());
                     messages.add(messageObj);
                 }
             }
-            
+
             // Add the new user message
             if (messageText != null) {
                 Map<String, Object> userMessage = new HashMap<>();
@@ -304,7 +334,7 @@ public class HttpUtils {
                 userMessage.put(textPath, messageText);
                 messages.add(userMessage);
             }
-            
+
             // Set the messages in the request body
             JsonUtils.setValueByPath(requestBody, config.getRequestMessageGroupPath(), messages);
         }
@@ -316,6 +346,51 @@ public class HttpUtils {
         Map<String, Object> result = new HashMap<>();
         result.put("headers", headers);
         result.put("requestBody", requestBody);
+
+        return result;
+    }
+
+    /**
+     * Method to decrypt an API key using AES decryption with the provided secret key
+     *
+     * @param encryptedApiKey The encrypted API key
+     * @param secretKey       The secret key to use for decryption
+     * @return The decrypted API key
+     */
+    public static String decryptApiKey(String encryptedApiKey, String secretKey) {
+        try {
+            // Ensure the secret key is 16/24/32 bytes (AES-128/192/256)
+            byte[] keyBytes = getAESKey(secretKey);
+
+            SecretKeySpec secretKeySpec = new SecretKeySpec(keyBytes, "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
+
+            byte[] encryptedBytes = java.util.Base64.getDecoder().decode(encryptedApiKey);
+            byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+
+            return new String(decryptedBytes, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.error("Error decrypting API key", e);
+            throw new ServiceException(CONFIG_NOT_EXISTS, "Failed to decrypt API key: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Helper method to create a valid AES key from a user-provided secret key
+     *
+     * @param userKey The user's secret key
+     * @return A 32-byte (256-bit) key for AES-256
+     */
+    private static byte[] getAESKey(String userKey) {
+        // Ensure the key is 32 bytes (256 bits) for AES-256
+        byte[] keyBytes = userKey.getBytes(StandardCharsets.UTF_8);
+        byte[] result = new byte[32]; // AES-256 key length
+
+        // If key is too short, repeat it
+        for (int i = 0; i < 32; i++) {
+            result[i] = keyBytes[i % keyBytes.length];
+        }
 
         return result;
     }

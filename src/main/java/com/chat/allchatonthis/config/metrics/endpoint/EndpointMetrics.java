@@ -69,9 +69,13 @@ public class EndpointMetrics {
         // - If present: returns the existing Counter to avoid duplicate registration
         Counter counter = endpointCounters.computeIfAbsent(endpoint, k ->
                 Counter.builder("acot.endpoint.calls")
+                        // TAGS: Add metadata labels to metrics for filtering/grouping in monitoring dashboards
+                        // These tags will appear in Prometheus/Grafana and help organize metrics by controller and method
                         .tags(Arrays.asList(
                                 Tag.of("controller", controllerName),  // Tag for grouping by controller
                                 Tag.of("method", methodName)))         // Tag for grouping by method
+                        // DESCRIPTION: Provides human-readable explanation of the metric in monitoring systems
+                        // This description will be visible in monitoring UIs to explain what this counter measures
                         .description("Number of calls to endpoint")
                         .register(meterRegistry));  // Register the Counter to Micrometer
 

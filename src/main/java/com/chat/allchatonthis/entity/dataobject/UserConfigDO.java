@@ -1,9 +1,6 @@
 package com.chat.allchatonthis.entity.dataobject;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.chat.allchatonthis.config.mybatis.core.dataobject.BaseDO;
 import lombok.AllArgsConstructor;
@@ -12,6 +9,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @EqualsAndHashCode(callSuper = true)
@@ -20,7 +18,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Accessors(chain = true)
 @TableName(value = "user_config", autoResultMap = true)
-public class UserConfigDO extends BaseDO {
+public class UserConfigDO extends BaseDO implements Cloneable{
     @TableId(type = IdType.AUTO)
     private Long id;
     private Boolean isAvailable; // Whether the configuration is available for use
@@ -56,4 +54,10 @@ public class UserConfigDO extends BaseDO {
     private String requestTextPathFromGroup; // JSON path for request text
     private String responseTextPath; // JSON path for response text
     private String responseThinkingTextPath; // JSON path for thinking text in response
+
+    private LocalDateTime lastUsedTime; // Time when this configuration was last used
+
+    // Transient field for secret key (not persisted)
+    @TableField(exist = false)
+    private String secretKey;
 }

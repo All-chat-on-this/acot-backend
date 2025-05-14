@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,6 +58,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
     @CacheEvict(key = "'list:' + #userId")
     public UserConfigDO createConfig(UserConfigDO config, Long userId) {
         config.setUserId(userId);
+        config.setLastUsedTime(LocalDateTime.now());
 
         // Only set false if isAvailable is null - allows frontend to set a successful state
         if (config.getIsAvailable() == null) {
@@ -92,6 +94,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         // Update fields
         config.setId(id);
         config.setUserId(userId);
+        config.setLastUsedTime(LocalDateTime.now());
 
         // Maintain current isAvailable status unless it has been explicitly set
         if (config.getIsAvailable() == null) {
@@ -122,8 +125,13 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
     }
 
     @Override
-    public ConfigTestVO testConfig(UserConfigDO config, Long userId) {
+    public ConfigTestVO testConfig(UserConfigDO config, Long userId,String secretKey) {
         try {
+            // set the secret key in config
+            if (StringUtils.hasText(secretKey)) {
+                config.setSecretKey(secretKey);
+            }
+
             // Use the common method to prepare request data
             Map<String, Object> requestData = HttpUtils.prepareRequestData(config, "Hello, nice to meet you.");
             Map<String, String> headers = (Map<String, String>) requestData.get("headers");
@@ -176,6 +184,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
                     UserConfigDO updateConfig = new UserConfigDO();
                     updateConfig.setId(config.getId());
                     updateConfig.setIsAvailable(true);
+                    updateConfig.setLastUsedTime(LocalDateTime.now());
                     updateById(updateConfig);
 
                     // Evict related cache entries
@@ -185,6 +194,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
 
                     // Also update the current object
                     config.setIsAvailable(true);
+                    config.setLastUsedTime(LocalDateTime.now());
                 }
 
                 // Create success response
@@ -200,10 +210,11 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
             } else {
                 // If test fails, set isAvailable to false if the configuration has an ID
                 if (config.getId() != null) {
-                    setAvailable(config.getId(), false);
+                    setAvailableAndUpdateLastUsedTime(config.getId(), false);
 
                     // Also update the current object
                     config.setIsAvailable(false);
+                    config.setLastUsedTime(LocalDateTime.now());
                 }
 
                 return ConfigTestVO.builder()
@@ -217,10 +228,11 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
 
             // If test fails due to exception, set isAvailable to false if the configuration has an ID
             if (config.getId() != null) {
-                setAvailable(config.getId(), false);
+                setAvailableAndUpdateLastUsedTime(config.getId(), false);
 
                 // Also update the current object
                 config.setIsAvailable(false);
+                config.setLastUsedTime(LocalDateTime.now());
             }
 
             return ConfigTestVO.builder()
@@ -236,10 +248,11 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
             @CacheEvict(key = "'id:' + #configId + ':user:' + '*'", allEntries = true),
             @CacheEvict(key = "'list:' + '*'", allEntries = true)
     })
-    public void setAvailable(Long configId, boolean available) {
+    public void setAvailableAndUpdateLastUsedTime(Long configId, boolean available) {
         UserConfigDO updateConfig = new UserConfigDO();
         updateConfig.setId(configId);
         updateConfig.setIsAvailable(available);
+        updateConfig.setLastUsedTime(LocalDateTime.now());
         updateById(updateConfig);
     }
 
@@ -404,4 +417,5 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
         // Save the configuration
         return createConfig(config, userId);
     }
-} 
+}
+    
