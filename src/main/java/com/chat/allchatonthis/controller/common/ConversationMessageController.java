@@ -50,7 +50,7 @@ public class ConversationMessageController {
     @PostMapping("/renameMessage")
     @PreAuthorize("isAuthenticated()")
     public CommonResult<ConversationMessageRespVO> renameMessage(@RequestBody ConversationMessageRenameReqVO reqVO, @LoginUser Long userId) {
-        ConversationMessageDO message = conversationMessageService.renameMessage(reqVO.getId(), reqVO.getContent(), userId);
+        ConversationMessageDO message = conversationMessageService.renameMessage(reqVO.getId(), reqVO.getContent(), userId, reqVO.getSecretKey());
         return CommonResult.success(BeanUtils.toBean(message, ConversationMessageRespVO.class));
     }
 

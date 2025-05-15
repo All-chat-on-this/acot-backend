@@ -17,4 +17,9 @@ public class ConversationMessageRenameReqVO {
      * New message content
      */
     private String content;
+
+    /**
+     * Secret key to decrypt the api key
+     */
+    private String secretKey;
 } 

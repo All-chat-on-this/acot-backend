@@ -49,7 +49,9 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
 
         return list(new LambdaQueryWrapper<ConversationMessageDO>()
                 .eq(ConversationMessageDO::getConversationId, conversationId)
-                .orderByAsc(ConversationMessageDO::getCreateTime));
+                .orderByAsc(ConversationMessageDO::getCreateTime)
+                .orderByAsc(ConversationMessageDO::getId)
+        );
     }
 
     @Override
@@ -87,11 +89,13 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
             throw new ServiceException(CONFIGURATION_NOT_EXISTS.getCode(), CONFIGURATION_NOT_EXISTS.getMsg());
         }
 
+        // Set the secretKey for decryption if provided
+        if (StringUtils.hasText(secretKey)) {
+            config.setSecretKey(secretKey);
+        }
+
         try {
-            // Set the secretKey for decryption if provided
-            if (StringUtils.hasText(secretKey)) {
-                config.setSecretKey(secretKey);
-            }
+
 
             // Create user message (but don't save it yet)
             ConversationMessageDO userMessageDO = new ConversationMessageDO()
@@ -110,6 +114,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
 
             // If we get here, the API call was successful, so now save the user message
             save(userMessageDO);
+            save(assistantMessageDO);
 
             // Update the conversation's update time
             conversation.setUpdateTime(assistantMessageDO.getUpdateTime());
@@ -136,7 +141,7 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
     @Override
     @Transactional
     @CacheEvict(key = "'id:' + #id + ':user:' + #userId")
-    public ConversationMessageDO renameMessage(Long id, String content, Long userId) {
+    public ConversationMessageDO renameMessage(Long id, String content, Long userId, String secretKey) {
         // Get the message and verify ownership
         ConversationMessageDO message = getMessage(id, userId);
         if (message == null) {
@@ -177,12 +182,18 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
                 throw new ServiceException(CONFIGURATION_NOT_EXISTS.getCode(), CONFIGURATION_NOT_EXISTS.getMsg());
             }
 
+            // Set the secretKey for decryption if provided
+            if (StringUtils.hasText(secretKey)) {
+                config.setSecretKey(secretKey);
+            }
+
             try {
                 // Get updated messages in the conversation for history (after deletions)
                 List<ConversationMessageDO> updatedMessages = getMessages(conversationId, userId);
 
                 // Generate the assistant response
                 ConversationMessageDO assistantMessageDO = generateAssistantResponse(content, config, conversationId, configId, updatedMessages);
+                save(assistantMessageDO);
 
                 // Update the conversation's update time
                 ConversationDO conversation = conversationService.getById(conversationId);
@@ -311,14 +322,12 @@ public class ConversationMessageServiceImpl extends ServiceImpl<ConversationMess
         }
 
         // Create assistant message with the response
-        ConversationMessageDO assistantMessageDO = new ConversationMessageDO()
+
+        return new ConversationMessageDO()
                 .setConversationId(conversationId)
                 .setConfigId(configId)
                 .setRole("assistant")
                 .setContent(content)
                 .setThinkingText(thinking);
-        save(assistantMessageDO);
-
-        return assistantMessageDO;
     }
 } 

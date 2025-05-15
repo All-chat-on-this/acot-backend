@@ -352,6 +352,7 @@ public class HttpUtils {
 
     /**
      * Method to decrypt an API key using AES decryption with the provided secret key
+     * This implementation is compatible with CryptoJS.AES encryption used in the frontend
      *
      * @param encryptedApiKey The encrypted API key
      * @param secretKey       The secret key to use for decryption
@@ -359,16 +360,31 @@ public class HttpUtils {
      */
     public static String decryptApiKey(String encryptedApiKey, String secretKey) {
         try {
-            // Ensure the secret key is 16/24/32 bytes (AES-128/192/256)
-            byte[] keyBytes = getAESKey(secretKey);
+            // CryptoJS uses OpenSSL format which includes salt
+            // First, decode Base64
+            byte[] cipherData = java.util.Base64.getDecoder().decode(encryptedApiKey);
 
-            SecretKeySpec secretKeySpec = new SecretKeySpec(keyBytes, "AES");
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
+            // CryptoJS format: "Salted__" + 8 byte salt + actual ciphertext
+            byte[] saltBytes = new byte[8];
+            byte[] cipherBytes = new byte[cipherData.length - 16];
 
-            byte[] encryptedBytes = java.util.Base64.getDecoder().decode(encryptedApiKey);
-            byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+            // Extract salt and ciphertext
+            System.arraycopy(cipherData, 8, saltBytes, 0, 8);
+            System.arraycopy(cipherData, 16, cipherBytes, 0, cipherData.length - 16);
 
+            // Generate key and IV using OpenSSL EVP_BytesToKey derivation
+            byte[][] keyAndIV = EVP_BytesToKey(32, 16, secretKey.getBytes(StandardCharsets.UTF_8), saltBytes, 1);
+            byte[] key = keyAndIV[0];
+            byte[] iv = keyAndIV[1];
+
+            // Use AES/CBC/PKCS5Padding (which is what CryptoJS uses by default)
+            SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
+            javax.crypto.spec.IvParameterSpec ivSpec = new javax.crypto.spec.IvParameterSpec(iv);
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivSpec);
+
+            byte[] decryptedBytes = cipher.doFinal(cipherBytes);
             return new String(decryptedBytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
             log.error("Error decrypting API key", e);
@@ -377,23 +393,66 @@ public class HttpUtils {
     }
 
     /**
-     * Helper method to create a valid AES key from a user-provided secret key
-     *
-     * @param userKey The user's secret key
-     * @return A 32-byte (256-bit) key for AES-256
+     * Implementation of OpenSSL's EVP_BytesToKey key derivation function
+     * This is used by CryptoJS to derive the key and IV from the password and salt
      */
-    private static byte[] getAESKey(String userKey) {
-        // Ensure the key is 32 bytes (256 bits) for AES-256
-        byte[] keyBytes = userKey.getBytes(StandardCharsets.UTF_8);
-        byte[] result = new byte[32]; // AES-256 key length
+    private static byte[][] EVP_BytesToKey(int keyLen, int ivLen, byte[] password, byte[] salt, int iterations) {
+        byte[] key = new byte[keyLen];
+        byte[] iv = new byte[ivLen];
 
-        // If key is too short, repeat it
-        for (int i = 0; i < 32; i++) {
-            result[i] = keyBytes[i % keyBytes.length];
+        byte[] concatenatedHashBytes = new byte[0];
+
+        java.security.MessageDigest md5;
+        try {
+            md5 = java.security.MessageDigest.getInstance("MD5");
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new RuntimeException("MD5 algorithm not available", e);
         }
 
-        return result;
+        int hashLen = 16; // MD5 hash length
+
+        int keyAndIvLen = keyLen + ivLen;
+        int numHashes = (keyAndIvLen + hashLen - 1) / hashLen;
+
+        byte[] result = new byte[numHashes * hashLen];
+        int resultLen = 0;
+
+        for (int i = 1; i <= numHashes; i++) {
+            // For the first hash, the data is just the password and salt
+            // For subsequent hashes, add the previous hash result
+            md5.reset();
+            if (i > 1) {
+                md5.update(concatenatedHashBytes);
+            }
+            md5.update(password);
+            if (salt != null) {
+                md5.update(salt);
+            }
+            concatenatedHashBytes = md5.digest();
+
+            // Perform additional iterations if requested
+            for (int j = 1; j < iterations; j++) {
+                md5.reset();
+                md5.update(concatenatedHashBytes);
+                concatenatedHashBytes = md5.digest();
+            }
+
+            // Copy the hash into the result buffer
+            System.arraycopy(
+                    concatenatedHashBytes, 0,
+                    result, resultLen,
+                    Math.min(concatenatedHashBytes.length, result.length - resultLen)
+            );
+            resultLen += concatenatedHashBytes.length;
+        }
+
+        // Split the result into key and IV
+        System.arraycopy(result, 0, key, 0, keyLen);
+        System.arraycopy(result, keyLen, iv, 0, ivLen);
+
+        return new byte[][]{key, iv};
     }
+
 
     private String append(String base, Map<String, ?> query, boolean fragment) {
         return append(base, query, null, fragment);

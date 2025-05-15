@@ -125,7 +125,7 @@ public class UserConfigServiceImpl extends ServiceImpl<UserConfigMapper, UserCon
     }
 
     @Override
-    public ConfigTestVO testConfig(UserConfigDO config, Long userId,String secretKey) {
+    public ConfigTestVO testConfig(UserConfigDO config, Long userId, String secretKey) {
         try {
             // set the secret key in config
             if (StringUtils.hasText(secretKey)) {

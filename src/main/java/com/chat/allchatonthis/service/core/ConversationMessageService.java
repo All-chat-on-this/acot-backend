@@ -40,12 +40,13 @@ public interface ConversationMessageService extends IService<ConversationMessage
     /**
      * Rename a message and generate a new AI response if it's a user message
      *
-     * @param id      Message ID to rename
-     * @param content New content for the message
-     * @param userId  User ID for security check
+     * @param id        Message ID to rename
+     * @param content   New content for the message
+     * @param userId    User ID for security check
+     * @param secretKey The secret key for API key decryption (optional)
      * @return The AI response message if a user message was renamed, or the updated message
      */
-    ConversationMessageDO renameMessage(Long id, String content, Long userId);
+    ConversationMessageDO renameMessage(Long id, String content, Long userId, String secretKey);
 
     /**
      * Delete a message

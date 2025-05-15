@@ -18,7 +18,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Accessors(chain = true)
 @TableName(value = "user_config", autoResultMap = true)
-public class UserConfigDO extends BaseDO implements Cloneable{
+public class UserConfigDO extends BaseDO{
     @TableId(type = IdType.AUTO)
     private Long id;
     private Boolean isAvailable; // Whether the configuration is available for use
